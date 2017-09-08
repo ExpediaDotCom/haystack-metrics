@@ -29,13 +29,19 @@ In the `<dependencies>` section of pom.xml put:
 </dependency>
 ```
 #### How to create objects
-In the examples below, the values of `SUBSYSTEM` and `CLASS_NAME` should not contain spaces or periods (each period or 
-space will be changed to a hyphen).
+In the examples below, the values of `SUBSYSTEM`, `APPLICATION`, and `CLASS_NAME` should not contain spaces or periods 
+(each period or space will be changed to a hyphen).
 ##### Subsystem
 As you will see, creating a Servo object in Haystack requires a "subsystem" String, whose value will be something like
 "pipes" or "trends"; the `SUBSYSTEM` constant below should be defined at a high level in your subsystem code base.
 ```
 public static final String SUBSYSTEM = "subsystemName"; // e.g. "pipes" or "trends"
+```
+##### Application
+Applications are in the subsystem's git repository, and good practice is to store the application name at a high level
+in the application's code hierarchy.
+```
+public static final String SUBSYSTEM = "applicationName";
 ```
 ##### Class
 Creating a Servo object also requires a "class" String, which is often the Java class or Scala object containing the
@@ -50,11 +56,13 @@ private static final String CLASS_NAME = "JsonSerialization";
 ```
 ##### Singleton
 Your Servo objects should be singletons, either as static (Java) or object (Scala) variables. The MetricObjects
-variable can be managed by a Dependency Injection (DI) framework or not, as you see fit. Servo objects are specified
-with Identifiers:
+variable with which you create them can be managed by a Dependency Injection (DI) framework or not, as you see fit.
+(The examples below show the creation of a new MetricsObject with the creation of each Servo object.) 
+Servo objects are specified with Identifiers:
 1. Subsystem
-2. Class Name
-3. Metric Name
+2. Application
+3. Class Name
+4. Metric Name
 If a Counter or Timer is created twice (that is, its Identifiers match that of an already registered Counter or Timer),
 then a warning will be logged and the existing object returned by the createAndRegister call. A Timer and a Counter 
 with matching Identifiers is allowed but best avoided.
@@ -62,7 +70,8 @@ with matching Identifiers is allowed but best avoided.
 ##### Creation
 The code below is a Java snippet that shows the right way to create a Counter:
 ```
-static final Counter REQUEST = (new MetricObjects()).createAndRegisterCounter(SUBSYSTEM, CLASS_NAME, "REQUEST");
+static final Counter REQUEST = (new MetricObjects()).createAndRegisterCounter(
+    SUBSYSTEM, APPLICATION, CLASS_NAME, "REQUEST");
 ```
 Because the Servo Counter generates a RATE metric, using upper case for the variable name `REQUEST` and the counter name 
 `"REQUEST"` is recommended because doing so results in an sensibly named complete metric name of `REQUEST_RATE` in
@@ -78,7 +87,7 @@ It will be reset when its value is reported to InfluxDb.
 The code below is a Java snippet that shows the right way to create a BasicTimer:
 ```
 static final Timer JSON_SERIALIZATION = (new MetricObjects()).createAndRegisterTimer(
-    SUBSYSTEM, KLASS_NAME, "JSON_SERIALIZATION", TimeUnit.MICROSECONDS);
+    SUBSYSTEM, APPLICATION, CLASS_NAME, "JSON_SERIALIZATION", TimeUnit.MICROSECONDS);
 ```
 The Servo Timer generates four metrics (GAUGE max, NORMALIZED count, NORMALIZED totalOfSquares, and NORMALIZED
 totalTime), and while using upper case is again suggested (see the Counter section above), the complete metric names 
@@ -113,11 +122,11 @@ To initialize the metrics system, the first line of your main() method should be
 ```
 where graphiteConfig is an implementation of the GraphiteConfig interface declared in this module.
 #### Configuration
-You will typically have a base.yaml in your resources directory whose contents will include:
+You will typically have a base.yaml in your resources directory whose contents will include something like:
 ```
 haystack:
   graphite:
-     prefix: "haystack"
+     prefix: "haystack" # using something other than "haystack" will require a change in the InfluxDb template
      address: "haystack.local" # set in /etc/hosts per instructions in haystack/deployment module
      port: 2003 # Graphite port; typically 2003
      pollIntervalSeconds: 60
@@ -142,20 +151,22 @@ text message into tags. (You can read about metrics tags
 This graphite bridge therefore requires a convention to map each metric piece to a tag; this convention is found/used in 
 three places that must agree on the convention:
 1. The template configuration (see the `templates` value in 
-[influxdb.yaml](../deployment/k8s/addons/1.6/monitoring/influxdb.yaml))
+[influxdb.yaml](https://github.com/ExpediaDotCom/haystack/blob/master/deployment/k8s/addons/1.6/monitoring/influxdb.yaml))
 2. The code that builds client-side tags (see `getTags()` in 
 [MetricObjects.java](src/main/java/com/expedia/www/haystack/metrics/MetricObjects.java))
 3. The code that creates the graphite plain text message from the metric and its client-side tags (see `getName()` in 
-[HaystackGraphiteNamingConvention.java](src/main/java/com/expedia/www/haystack/metrics/HaystackGraphiteNamingConvention.java))
+[ServoToInfluxDbViaGraphiteNamingConvention.java](src/main/java/com/expedia/www/haystack/metrics/ServoToInfluxDbViaGraphiteNamingConvention.java))
 
 As a result, the graphite message has the following meaning:
 ```
-<system>.<server>.<subsystem>.<class>.<VARIABLE_NAME>_<METRIC_NAME>
+<system>.<server>.<subsystem>.<application>.<class>.<VARIABLE_NAME>_<METRIC_NAME> (for Counter)
+<system>.<server>.<subsystem>.<application>.<class>.<VARIABLE_NAME>_<METRIC_NAME>_<timerStatName> (for Timer)
 ```
 where:
 * `<system>` is typically "haystack" (this value is controlled by the `haystack.graphite.prefix` configuration)
 * `<server>` is the host name
 * `<subsystem>` is the value discussed in the "Subsystem" section above
+* `<application>` is the value discussed in the "Application" section above
 * `<class>` is the  value discussed in the "Class" section above
-* `<VARIABLE_NAME>_<METRIC_NAME>_<timerStatName>` is the complete metric name; see the "Counter" and "BasicTimer" 
-sections above.
+* `<VARIABLE_NAME>_<METRIC_NAME>` or `<VARIABLE_NAME>_<METRIC_NAME>_<timerStatName>` is the complete metric name; see 
+the "Counter" and "BasicTimer" sections above.
