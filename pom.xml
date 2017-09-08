@@ -4,8 +4,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
+
     <groupId>com.expedia.www</groupId>
-    <artifactId>haystack-commons</artifactId>
+    <artifactId>haystack-metrics</artifactId>
     <version>0.1</version>
     <packaging>jar</packaging>
 
@@ -55,10 +61,29 @@
         </developer>
     </developers>
 
+    <!--
+ Supposedly the XML below will result in needing to run "mvn release:perform" to sign artifacts, but "mvn deploy" still
+ uploaded to http://oss.sonatype.org/service/local/staging/deploy/maven2/com/expedia/www/haystack-metrics; I'm not sure
+ why and am leaving this XML in place for future investigation with the next release.
+    -->
+    <profiles>
+        <profile>
+            <id>release-sign-artifacts</id>
+            <activation>
+                <property>
+                    <name>performRelease</name>
+                    <value>true</value>
+                </property>
+            </activation>
+        </profile>
+    </profiles>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>1.8</java.version>
         <junit-version>4.12</junit-version>
         <maven-compiler-plugin-version>3.6.1</maven-compiler-plugin-version>
+        <maven-gpg-plugin-version>1.6</maven-gpg-plugin-version>
         <maven-javadoc-plugin-version>2.10.4</maven-javadoc-plugin-version>
         <maven-jar-plugin-version>3.0.2</maven-jar-plugin-version>
         <maven-source-plugin-version>3.0.1</maven-source-plugin-version>
@@ -103,6 +128,18 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>http://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
+
     <build>
         <plugins>
             <plugin>
@@ -144,9 +181,23 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin-version}</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>${maven-gpg-plugin-version}</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
