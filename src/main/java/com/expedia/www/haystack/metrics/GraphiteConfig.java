@@ -39,12 +39,12 @@ public interface GraphiteConfig {
      *
      * @return the poll interval, in seconds
      */
-    int pollIntervalSeconds();
+    int pollintervalseconds();
 
     /**
      * The queue size of the asynchronous metric observer that polls metric data to send to Graphite
      *
      * @return the queue size to use
      */
-    int queueSize();
+    int queuesize();
 }

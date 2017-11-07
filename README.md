@@ -129,8 +129,8 @@ haystack:
      prefix: "haystack" # using something other than "haystack" will require a change in the InfluxDb template
      address: "haystack.local" # set in /etc/hosts per instructions in haystack/deployment module
      port: 2003 # Graphite port; typically 2003
-     pollIntervalSeconds: 60
-     queueSize: 10
+     pollintervalseconds: 60
+     queuesize: 10
 ```
 ### Graphite Bridge
 The "Graphite Bridge" connects Servo metrics from the application to the Haystack InfluxDb via Graphite 

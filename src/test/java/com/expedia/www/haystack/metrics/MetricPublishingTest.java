@@ -159,12 +159,12 @@ public class MetricPublishingTest {
     private void whensForRateTransform() {
         when(mockFactory.createCounterToRateMetricTransform(any(MetricObserver.class), anyLong(), any(TimeUnit.class)))
                 .thenReturn(mockCounterToRateMetricTransform);
-        when(mockGraphiteConfig.pollIntervalSeconds()).thenReturn(POLL_INTERVAL_SECONDS);
+        when(mockGraphiteConfig.pollintervalseconds()).thenReturn(POLL_INTERVAL_SECONDS);
     }
 
     private void verifiesForRateTransform(int pollIntervalSecondsTimes, MetricObserver metricObserver) {
         verify(mockFactory).createCounterToRateMetricTransform(metricObserver, HEARTBEAT, TimeUnit.SECONDS);
-        verify(mockGraphiteConfig, times(pollIntervalSecondsTimes)).pollIntervalSeconds();
+        verify(mockGraphiteConfig, times(pollIntervalSecondsTimes)).pollintervalseconds();
     }
 
     @Test
@@ -178,15 +178,15 @@ public class MetricPublishingTest {
     }
 
     private void whensForAsync() {
-        when(mockGraphiteConfig.pollIntervalSeconds()).thenReturn(POLL_INTERVAL_SECONDS);
-        when(mockGraphiteConfig.queueSize()).thenReturn(QUEUE_SIZE);
+        when(mockGraphiteConfig.pollintervalseconds()).thenReturn(POLL_INTERVAL_SECONDS);
+        when(mockGraphiteConfig.queuesize()).thenReturn(QUEUE_SIZE);
         when(mockFactory.createAsyncMetricObserver(any(MetricObserver.class), anyInt(), anyLong()))
                 .thenReturn(mockAsyncMetricObserver);
     }
 
     private void verifiesForAsync(int pollIntervalSecondsTimes, MetricObserver metricObserver) {
-        verify(mockGraphiteConfig, times(pollIntervalSecondsTimes)).pollIntervalSeconds();
-        verify(mockGraphiteConfig).queueSize();
+        verify(mockGraphiteConfig, times(pollIntervalSecondsTimes)).pollintervalseconds();
+        verify(mockGraphiteConfig).queuesize();
         verify(mockFactory).createAsyncMetricObserver(
                 metricObserver, QUEUE_SIZE, EXPIRE_TIME);
     }

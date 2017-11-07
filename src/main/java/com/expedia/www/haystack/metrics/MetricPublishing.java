@@ -75,7 +75,7 @@ public class MetricPublishing {
         final MetricPoller monitorRegistryMetricPoller = factory.createMonitorRegistryMetricPoller();
         final List<MetricObserver> observers = Collections.singletonList(createGraphiteObserver(graphiteConfig));
         final PollRunnable task = factory.createTask(monitorRegistryMetricPoller, observers);
-        pollScheduler.addPoller(task, graphiteConfig.pollIntervalSeconds(), TimeUnit.SECONDS);
+        pollScheduler.addPoller(task, graphiteConfig.pollintervalseconds(), TimeUnit.SECONDS);
     }
 
     MetricObserver createGraphiteObserver(GraphiteConfig graphiteConfig) {
@@ -85,13 +85,13 @@ public class MetricPublishing {
     }
 
     MetricObserver rateTransform(GraphiteConfig graphiteConfig, MetricObserver observer) {
-        final long heartbeat = POLL_INTERVAL_SECONDS_TO_HEARTBEAT_MULTIPLIER * graphiteConfig.pollIntervalSeconds();
+        final long heartbeat = POLL_INTERVAL_SECONDS_TO_HEARTBEAT_MULTIPLIER * graphiteConfig.pollintervalseconds();
         return factory.createCounterToRateMetricTransform(observer, heartbeat, TimeUnit.SECONDS);
     }
 
     MetricObserver async(GraphiteConfig graphiteConfig, MetricObserver observer) {
-        final long expireTime = POLL_INTERVAL_SECONDS_TO_EXPIRE_TIME_MULTIPLIER * graphiteConfig.pollIntervalSeconds();
-        final int queueSize = graphiteConfig.queueSize();
+        final long expireTime = POLL_INTERVAL_SECONDS_TO_EXPIRE_TIME_MULTIPLIER * graphiteConfig.pollintervalseconds();
+        final int queueSize = graphiteConfig.queuesize();
         return factory.createAsyncMetricObserver(observer, queueSize, expireTime);
     }
 
