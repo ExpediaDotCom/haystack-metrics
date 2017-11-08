@@ -22,9 +22,7 @@ then
     mvn --settings .travis/settings.xml org.codehaus.mojo:versions-maven-plugin:2.1:set -DnewVersion=$TRAVIS_TAG 1>/dev/null 2>/dev/null
 else
     SKIP_GPG_SIGN=true
-    # extract the agent jar version from pom.xml
-    export AGENT_JAR_VERSION=`cat pom.xml | sed -n -e 's/.*<version>\(.*\)<\/version>.*/\1/p' | head -1`
-    echo "no travis tag is set, hence keeping the snapshot version in pom.xml"
+    echo "no travis tag is set, so publishing the current snapshot versioned jar without gpg signing"
 fi
 
 mvn clean deploy --settings .travis/settings.xml -Dgpg.skip=$SKIP_GPG_SIGN -DskipTests=true -B -U
