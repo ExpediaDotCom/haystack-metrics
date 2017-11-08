@@ -98,11 +98,13 @@ public class MetricPublishingTest {
     }
 
     @Test
-    public void testStart() throws UnknownHostException {
+    public void testStart() throws UnknownHostException, InterruptedException {
         final List<MetricObserver> observers = whensForStart();
 
         metricPublishing.start(mockGraphiteConfig);
 
+        // Would mock PollScheduler, but it's final; instead, sleep to give mockTask.run() time to be called
+        Thread.sleep(1000);
         verifiesForStart(observers);
     }
 
