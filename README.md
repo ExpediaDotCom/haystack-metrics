@@ -170,3 +170,23 @@ where:
 * `<class>` is the  value discussed in the "Class" section above
 * `<VARIABLE_NAME>_<METRIC_NAME>` or `<VARIABLE_NAME>_<METRIC_NAME>_<timerStatName>` is the complete metric name; see 
 the "Counter" and "BasicTimer" sections above.
+
+### Releases
+1. Decide what kind of version bump is necessary, based on [Semantic Versioning](http://semver.org/) conventions.
+In the items below, the version number you select will be referred to as `x.y.z`.
+2. Update the [pom.xml](https://github.com/ExpediaDotCom/haystack-metrics/blob/master/pom.xml), changing the
+version element to `<version>x.y.z-SNAPSHOT</version>`. Note the `-SNAPSHOT` suffix.
+3. Make your code changes, including unit tests. This package requires 100% unit test code coverage for the build to 
+succeed.
+4. Update the [ReleaseNotes.md]((https://github.com/ExpediaDotCom/haystack-metrics/blob/master/ReleaseNotes.md)) file
+with details of your changes.
+5. Create a pull request with your changes.
+6. Ask for a review of the pull request; when it is approved, the Travis CI build will upload the resulting jar file
+to the [SonaType Staging Repository](https://oss.sonatype.org/#stagingRepositories)
+7. Tag the build with the version number: from a command line, executed in the root directory of the project:
+```
+git tag x.y.z
+git push --tags
+```
+This will cause the jar file to be released to the 
+[SonaType Release Repository](https://oss.sonatype.org/#nexus-search;quick~haystack-metrics)
