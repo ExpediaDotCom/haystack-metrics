@@ -1,5 +1,8 @@
 # Release Notes
 
+## 0.2.2 / 2017-11-10 Add GraphiteConfigImpl
+This new class makes it easier to use this haystack-metrics package without using cfg4j.
+
 ## 0.2.1 / 2017-11-09 No functional changes
 1. Add this ReleaseNotes.md file.
 2. Use nexus-staging-maven-plugin in pom.xml to hopefully avoid manual release steps after upload.
@@ -13,4 +16,4 @@ This was necessary because:
 4. It would be difficult to write a converter that knew how to the environment variables to camel case.
 Because of difficulties signing the jar file, this release was never sent to the SonaType Nexus repository.
 
-## 0.1 / 2017-09-08 Initiaªl release to SonaType Nexus Repository
+## 0.1 / 2017-09-08 Initial release to SonaType Nexus Repository
