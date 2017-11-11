@@ -37,4 +37,27 @@ public class GraphiteConfigImpl implements GraphiteConfig {
     public int queuesize() {
         return queuesize;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GraphiteConfigImpl that = (GraphiteConfigImpl) o;
+
+        if (port != that.port) return false;
+        if (pollintervalseconds != that.pollintervalseconds) return false;
+        //noinspection SimplifiableIfStatement
+        if (queuesize != that.queuesize) return false;
+        return address != null ? address.equals(that.address) : that.address == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = address != null ? address.hashCode() : 0;
+        result = 31 * result + port;
+        result = 31 * result + pollintervalseconds;
+        result = 31 * result + queuesize;
+        return result;
+    }
 }
