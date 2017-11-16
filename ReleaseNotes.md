@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.2.3 / 2017-11-16 Add MetricPublishing.stop() method
+Exposing a stop() method permits users of haystack-metrics to stop the metrics polling when required (for example, 
+when shutting down the system).
+
 ## 0.2.2 / 2017-11-10 Add GraphiteConfigImpl
 This new class makes it easier to use this haystack-metrics package without using cfg4j.
 
@@ -11,9 +15,9 @@ This new class makes it easier to use this haystack-metrics package without usin
 This was necessary because:
 1. The configuration system used in Haystack is a mixture of environment variables and files.
 2. The environment variables are by convention SCREAMING_SNAKE_CASE.
-3. The configurations in the files (sometimes overridden by the environment variables) use period as a delimiter are
+3. The configurations in the files (sometimes overridden by the environment variables) use period as a delimiter and are
 **not** upper case.
-4. It would be difficult to write a converter that knew how to the environment variables to camel case.
+4. It would be difficult to write a converter that knows how to change the environment variables to camel case.
 Because of difficulties signing the jar file, this release was never sent to the SonaType Nexus repository.
 
 ## 0.1 / 2017-09-08 Initial release to SonaType Nexus Repository
