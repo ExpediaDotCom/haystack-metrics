@@ -106,6 +106,7 @@ public class MetricPublishingTest {
         // Would mock PollScheduler, but it's final; instead, sleep to give mockTask.run() time to be called
         Thread.sleep(1000);
         verifiesForStart(observers);
+        metricPublishing.stop();
     }
 
     private List<MetricObserver> whensForStart() {
@@ -167,6 +168,19 @@ public class MetricPublishingTest {
     private void verifiesForRateTransform(int pollIntervalSecondsTimes, MetricObserver metricObserver) {
         verify(mockFactory).createCounterToRateMetricTransform(metricObserver, HEARTBEAT, TimeUnit.SECONDS);
         verify(mockGraphiteConfig, times(pollIntervalSecondsTimes)).pollintervalseconds();
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testStopWithoutCallingStartFirst() {
+        try {
+            metricPublishing.stop();
+        } catch (IllegalStateException e) {
+            // PollScheduler is a final class and cannot be mocked with Mockito, so traditional verification of
+            // metricPublishing.stop() cannot be done. Instead, don't call start(), and catch the resulting exception
+            // that will only occur when stop() is called without calling start().
+            assertEquals("scheduler must be started before you stop it", e.getMessage());
+            throw e;
+        }
     }
 
     @Test

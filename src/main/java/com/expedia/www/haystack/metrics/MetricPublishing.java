@@ -45,6 +45,7 @@ public class MetricPublishing {
     static final String HOST_NAME_UNKNOWN_HOST_EXCEPTION = "HostName-UnknownHostException";
 
     private final Factory factory;
+    private final PollScheduler pollScheduler = PollScheduler.getInstance();
 
     /**
      * Creates a new instance of MetricPublishing; intended to be used by non-unit-test code.
@@ -70,12 +71,18 @@ public class MetricPublishing {
      * @param graphiteConfig Tells the library how to talk to Graphite
      */
     public void start(GraphiteConfig graphiteConfig) {
-        final PollScheduler pollScheduler = PollScheduler.getInstance();
         pollScheduler.start();
         final MetricPoller monitorRegistryMetricPoller = factory.createMonitorRegistryMetricPoller();
         final List<MetricObserver> observers = Collections.singletonList(createGraphiteObserver(graphiteConfig));
         final PollRunnable task = factory.createTask(monitorRegistryMetricPoller, observers);
         pollScheduler.addPoller(task, graphiteConfig.pollintervalseconds(), TimeUnit.SECONDS);
+    }
+
+    /**
+     * Stops the polling that publishes metrics; for maximum safety, call this method before calling System.exit().
+     */
+    public void stop() {
+        pollScheduler.stop();
     }
 
     MetricObserver createGraphiteObserver(GraphiteConfig graphiteConfig) {
