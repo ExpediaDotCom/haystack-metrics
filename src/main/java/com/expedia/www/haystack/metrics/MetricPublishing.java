@@ -66,16 +66,21 @@ public class MetricPublishing {
 
     /**
      * Starts the polling that will publish metrics at regular intervals. This start() method should be called by
-     * the main() method of the application.
+     * the main() method of the application. Calling this method more than once is allowed, but will have no effect if
+     * the polling has already been started.
      *
      * @param graphiteConfig Tells the library how to talk to Graphite
      */
     public void start(GraphiteConfig graphiteConfig) {
-        pollScheduler.start();
-        final MetricPoller monitorRegistryMetricPoller = factory.createMonitorRegistryMetricPoller();
-        final List<MetricObserver> observers = Collections.singletonList(createGraphiteObserver(graphiteConfig));
-        final PollRunnable task = factory.createTask(monitorRegistryMetricPoller, observers);
-        pollScheduler.addPoller(task, graphiteConfig.pollintervalseconds(), TimeUnit.SECONDS);
+        synchronized (pollScheduler) {
+            if(!pollScheduler.isStarted()) {
+                pollScheduler.start();
+                final MetricPoller monitorRegistryMetricPoller = factory.createMonitorRegistryMetricPoller();
+                final List<MetricObserver> observers = Collections.singletonList(createGraphiteObserver(graphiteConfig));
+                final PollRunnable task = factory.createTask(monitorRegistryMetricPoller, observers);
+                pollScheduler.addPoller(task, graphiteConfig.pollintervalseconds(), TimeUnit.SECONDS);
+            }
+        }
     }
 
     /**
