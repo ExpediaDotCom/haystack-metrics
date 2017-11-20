@@ -1,5 +1,13 @@
 # Release Notes
 
+## 0.2.4 / 2017-11-20 Only call pollScheduler.start() if it is not already started
+As this haystack-metrics package is used more frequently and in different software layers, it's possible for multiple
+callers to request that the metrics polling thread be started, but this call must only be made once for each
+PollScheduler. (Typically there is only one PollScheduler, because `PollScheduler.getInstance()` is a singleton.)
+So `MetricPublishing.start(GraphiteConfig)` now has a `synchronized (pollScheduler)` block in which 
+`pollScheduler.isStarted()` is called, and the call to `pollScheduler.start()` is made if and only if
+`pollScheduler.isStarted()` returns false.
+
 ## 0.2.3 / 2017-11-16 Add MetricPublishing.stop() method
 Exposing a stop() method permits users of haystack-metrics to stop the metrics polling when required (for example, 
 when shutting down the system).

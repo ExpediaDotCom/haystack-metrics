@@ -1,3 +1,19 @@
+/*
+ * Copyright 2017 Expedia, Inc.
+ *
+ *       Licensed under the Apache License, Version 2.0 (the "License");
+ *       you may not use this file except in compliance with the License.
+ *       You may obtain a copy of the License at
+ *
+ *           http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *       Unless required by applicable law or agreed to in writing, software
+ *       distributed under the License is distributed on an "AS IS" BASIS,
+ *       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *       See the License for the specific language governing permissions and
+ *       limitations under the License.
+ *
+ */
 package com.expedia.www.haystack.metrics;
 
 import com.expedia.www.haystack.metrics.MetricPublishing.Factory;
@@ -53,6 +69,7 @@ public class MetricPublishingTest {
     private static final String PREFIX = RANDOM.nextLong() + "PREFIX";
     private static final int PORT = RANDOM.nextInt(Short.MAX_VALUE);
     private static final String ADDRESS_AND_PORT = ADDRESS + ':' + PORT;
+    private static final int NUMBER_OF_ITERATIONS_IN_TESTS = RANDOM.nextInt(Byte.MAX_VALUE) + 2;
 
     @Mock
     private Factory mockFactory;
@@ -101,12 +118,27 @@ public class MetricPublishingTest {
     public void testStart() throws UnknownHostException, InterruptedException {
         final List<MetricObserver> observers = whensForStart();
 
-        metricPublishing.start(mockGraphiteConfig);
+        for(int i = 0 ; i < NUMBER_OF_ITERATIONS_IN_TESTS ; i++) {
+            metricPublishing.start(mockGraphiteConfig);
+        }
 
         // Would mock PollScheduler, but it's final; instead, sleep to give mockTask.run() time to be called
         Thread.sleep(1000);
         verifiesForStart(observers);
         metricPublishing.stop();
+    }
+
+    @Test(expected = OutOfMemoryError.class)
+    public void testStartThrowsException() {
+        final OutOfMemoryError outOfMemoryError = new OutOfMemoryError("Test");
+        when(mockFactory.createMonitorRegistryMetricPoller()).thenThrow(outOfMemoryError);
+        try {
+            metricPublishing.start(mockGraphiteConfig);
+        } catch(OutOfMemoryError e) {
+            assertSame(outOfMemoryError, e);
+            verify(mockFactory).createMonitorRegistryMetricPoller();
+            throw e;
+        }
     }
 
     private List<MetricObserver> whensForStart() {
