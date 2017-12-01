@@ -1,5 +1,13 @@
 # Release Notes
 
+## 0.2.6 / 2017-12-01 Post at the specified polling interval, not twice that value
+The 0.2.5 change accidentally did not get merged before committing and tagging.
+
+## 0.2.5 / 2017-12-01 Post at the specified polling interval, not twice that value
+There is a `pollintervalseconds` configuration needed, and previously the code multiplied that number by a constant
+defined in the code (the value of that constant was 2), but this makes the metrics more difficult to understand.
+Instead, just use the unmodified value of `pollintervalseconds` (typically set to 60).
+
 ## 0.2.4 / 2017-11-20 Only call pollScheduler.start() if it is not already started
 As this haystack-metrics package is used more frequently and in different software layers, it's possible for multiple
 callers to request that the metrics polling thread be started, but this call must only be made once for each
