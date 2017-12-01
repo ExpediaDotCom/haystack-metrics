@@ -43,7 +43,6 @@ import java.util.concurrent.TimeUnit;
 import static com.expedia.www.haystack.metrics.MetricPublishing.ASYNC_METRIC_OBSERVER_NAME;
 import static com.expedia.www.haystack.metrics.MetricPublishing.HOST_NAME_UNKNOWN_HOST_EXCEPTION;
 import static com.expedia.www.haystack.metrics.MetricPublishing.POLL_INTERVAL_SECONDS_TO_EXPIRE_TIME_MULTIPLIER;
-import static com.expedia.www.haystack.metrics.MetricPublishing.POLL_INTERVAL_SECONDS_TO_HEARTBEAT_MULTIPLIER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Matchers.any;
@@ -63,7 +62,6 @@ public class MetricPublishingTest {
     private static final int POLL_INTERVAL_SECONDS = RANDOM.nextInt(Short.MAX_VALUE);
     private static final int QUEUE_SIZE = RANDOM.nextInt(Byte.MAX_VALUE) + 1;
     private static final long EXPIRE_TIME = POLL_INTERVAL_SECONDS_TO_EXPIRE_TIME_MULTIPLIER * POLL_INTERVAL_SECONDS;
-    private static final long HEARTBEAT = POLL_INTERVAL_SECONDS_TO_HEARTBEAT_MULTIPLIER * POLL_INTERVAL_SECONDS;
     private static final String ADDRESS = String.format("%d.%d.%d.%d", RANDOM.nextInt(Byte.MAX_VALUE),
             RANDOM.nextInt(Byte.MAX_VALUE), RANDOM.nextInt(Byte.MAX_VALUE), RANDOM.nextInt(Byte.MAX_VALUE));
     private static final String PREFIX = RANDOM.nextLong() + "PREFIX";
@@ -198,7 +196,7 @@ public class MetricPublishingTest {
     }
 
     private void verifiesForRateTransform(int pollIntervalSecondsTimes, MetricObserver metricObserver) {
-        verify(mockFactory).createCounterToRateMetricTransform(metricObserver, HEARTBEAT, TimeUnit.SECONDS);
+        verify(mockFactory).createCounterToRateMetricTransform(metricObserver, POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
         verify(mockGraphiteConfig, times(pollIntervalSecondsTimes)).pollintervalseconds();
     }
 
@@ -252,7 +250,7 @@ public class MetricPublishingTest {
         when(mockMetricObserver.getName()).thenReturn(ASYNC_METRIC_OBSERVER_NAME);
 
         final MetricObserver metricObserver = factory.createCounterToRateMetricTransform(
-                mockMetricObserver, HEARTBEAT, TimeUnit.SECONDS);
+                mockMetricObserver, POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
 
         assertEquals(ASYNC_METRIC_OBSERVER_NAME, metricObserver.getName());
         assertEquals(CounterToRateMetricTransform.class, metricObserver.getClass());

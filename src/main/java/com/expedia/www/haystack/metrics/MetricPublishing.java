@@ -33,6 +33,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
  * Publishes metrics to InfluxDb on a regular interval. The frequency of publishing is controlled by configuration.
  * Each application that uses this class must call MetricPublishing.start() in its main() method.
@@ -41,7 +43,6 @@ import java.util.concurrent.TimeUnit;
 public class MetricPublishing {
     static final String ASYNC_METRIC_OBSERVER_NAME = "haystack";
     static final int POLL_INTERVAL_SECONDS_TO_EXPIRE_TIME_MULTIPLIER = 2000;
-    static final int POLL_INTERVAL_SECONDS_TO_HEARTBEAT_MULTIPLIER = 2;
     static final String HOST_NAME_UNKNOWN_HOST_EXCEPTION = "HostName-UnknownHostException";
 
     private final Factory factory;
@@ -78,7 +79,7 @@ public class MetricPublishing {
                 final MetricPoller monitorRegistryMetricPoller = factory.createMonitorRegistryMetricPoller();
                 final List<MetricObserver> observers = Collections.singletonList(createGraphiteObserver(graphiteConfig));
                 final PollRunnable task = factory.createTask(monitorRegistryMetricPoller, observers);
-                pollScheduler.addPoller(task, graphiteConfig.pollintervalseconds(), TimeUnit.SECONDS);
+                pollScheduler.addPoller(task, graphiteConfig.pollintervalseconds(), SECONDS);
             }
         }
     }
@@ -97,8 +98,7 @@ public class MetricPublishing {
     }
 
     MetricObserver rateTransform(GraphiteConfig graphiteConfig, MetricObserver observer) {
-        final long heartbeat = POLL_INTERVAL_SECONDS_TO_HEARTBEAT_MULTIPLIER * graphiteConfig.pollintervalseconds();
-        return factory.createCounterToRateMetricTransform(observer, heartbeat, TimeUnit.SECONDS);
+        return factory.createCounterToRateMetricTransform(observer, graphiteConfig.pollintervalseconds(), SECONDS);
     }
 
     MetricObserver async(GraphiteConfig graphiteConfig, MetricObserver observer) {
