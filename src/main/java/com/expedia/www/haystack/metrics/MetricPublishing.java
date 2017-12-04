@@ -92,9 +92,9 @@ public class MetricPublishing {
     }
 
     MetricObserver createGraphiteObserver(GraphiteConfig graphiteConfig) {
-        final String address = graphiteConfig.address() + ":" + graphiteConfig.port();
+        final String hostAndPort = graphiteConfig.host() + ":" + graphiteConfig.port();
         return rateTransform(graphiteConfig,
-                async(graphiteConfig, factory.createGraphiteMetricObserver(ASYNC_METRIC_OBSERVER_NAME, address)));
+                async(graphiteConfig, factory.createGraphiteMetricObserver(ASYNC_METRIC_OBSERVER_NAME, hostAndPort)));
     }
 
     MetricObserver rateTransform(GraphiteConfig graphiteConfig, MetricObserver observer) {
@@ -136,9 +136,9 @@ public class MetricPublishing {
             return InetAddress.getLocalHost();
         }
 
-        MetricObserver createGraphiteMetricObserver(String prefix, String address) {
+        MetricObserver createGraphiteMetricObserver(String prefix, String host) {
             final String hostName = Factory.getLocalHostName(this);
-            return new GraphiteMetricObserver(prefix, address,
+            return new GraphiteMetricObserver(prefix, host,
                     new ServoToInfluxDbViaGraphiteNamingConvention(hostName));
         }
 

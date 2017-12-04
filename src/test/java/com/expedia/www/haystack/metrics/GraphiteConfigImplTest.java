@@ -26,7 +26,7 @@ import static org.junit.Assert.assertNotEquals;
 
 public class GraphiteConfigImplTest {
     private static Random RANDOM = new Random();
-    private static final String ADDRESS = RANDOM.nextLong() + "ADDRESS";
+    private static final String HOST = RANDOM.nextLong() + "HOST";
     private static final int PORT = RANDOM.nextInt();
     private static final int POLL_INTERVAL_SECONDS = RANDOM.nextInt();
     private static final int QUEUE_SIZE = RANDOM.nextInt();
@@ -35,12 +35,12 @@ public class GraphiteConfigImplTest {
 
     @Before
     public void setUp() {
-        graphiteConfig = new GraphiteConfigImpl(ADDRESS, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE);
+        graphiteConfig = new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE);
     }
 
     @Test
-    public void testAddress() {
-        assertEquals(ADDRESS, graphiteConfig.address());
+    public void testHost() {
+        assertEquals(HOST, graphiteConfig.host());
     }
 
     @Test
@@ -61,15 +61,15 @@ public class GraphiteConfigImplTest {
     @Test
     public void testEquals() {
         assertEquals(graphiteConfig, graphiteConfig);
-        assertEquals(graphiteConfig, new GraphiteConfigImpl(ADDRESS, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE));
+        assertEquals(graphiteConfig, new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE));
         assertEquals(new GraphiteConfigImpl(null, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE),
                 new GraphiteConfigImpl(null, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE));
         assertNotEquals(graphiteConfig, new GraphiteConfigImpl(null, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE));
         assertNotEquals(new GraphiteConfigImpl(null, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE), graphiteConfig);
         assertNotEquals(graphiteConfig, new GraphiteConfigImpl("", PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE));
-        assertNotEquals(graphiteConfig, new GraphiteConfigImpl(ADDRESS, PORT + 1, POLL_INTERVAL_SECONDS, QUEUE_SIZE));
-        assertNotEquals(graphiteConfig, new GraphiteConfigImpl(ADDRESS, PORT, POLL_INTERVAL_SECONDS + 1, QUEUE_SIZE));
-        assertNotEquals(graphiteConfig, new GraphiteConfigImpl(ADDRESS, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE + 1));
+        assertNotEquals(graphiteConfig, new GraphiteConfigImpl(HOST, PORT + 1, POLL_INTERVAL_SECONDS, QUEUE_SIZE));
+        assertNotEquals(graphiteConfig, new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS + 1, QUEUE_SIZE));
+        assertNotEquals(graphiteConfig, new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE + 1));
         assertNotEquals(graphiteConfig, null);
         assertNotEquals(graphiteConfig, "");
     }
@@ -77,10 +77,10 @@ public class GraphiteConfigImplTest {
     @Test
     public void testHashCode() {
         assertEquals(graphiteConfig.hashCode(), graphiteConfig.hashCode());
-        assertEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(ADDRESS, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE).hashCode());
+        assertEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE).hashCode());
         assertNotEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(null, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE).hashCode());
-        assertNotEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(ADDRESS, PORT + 1, POLL_INTERVAL_SECONDS, QUEUE_SIZE).hashCode());
-        assertNotEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(ADDRESS, PORT, POLL_INTERVAL_SECONDS + 1, QUEUE_SIZE).hashCode());
-        assertNotEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(ADDRESS, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE + 1).hashCode());
+        assertNotEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(HOST, PORT + 1, POLL_INTERVAL_SECONDS, QUEUE_SIZE).hashCode());
+        assertNotEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS + 1, QUEUE_SIZE).hashCode());
+        assertNotEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE + 1).hashCode());
     }
 }
