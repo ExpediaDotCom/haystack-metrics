@@ -21,11 +21,11 @@ package com.expedia.www.haystack.metrics;
  */
 public interface GraphiteConfig {
     /**
-     * IP address of the Graphite store that will receive Graphite messages
+     * IP address or DNS Name of the Graphite store that will receive Graphite messages
      *
      * @return the IP address or DNS name to use
      */
-    String address();
+    String host();
 
     /**
      * Port of the Graphite store that will receive Graphite messages

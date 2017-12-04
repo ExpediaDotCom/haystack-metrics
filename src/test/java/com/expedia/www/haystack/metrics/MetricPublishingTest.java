@@ -62,11 +62,11 @@ public class MetricPublishingTest {
     private static final int POLL_INTERVAL_SECONDS = RANDOM.nextInt(Short.MAX_VALUE);
     private static final int QUEUE_SIZE = RANDOM.nextInt(Byte.MAX_VALUE) + 1;
     private static final long EXPIRE_TIME = POLL_INTERVAL_SECONDS_TO_EXPIRE_TIME_MULTIPLIER * POLL_INTERVAL_SECONDS;
-    private static final String ADDRESS = String.format("%d.%d.%d.%d", RANDOM.nextInt(Byte.MAX_VALUE),
+    private static final String HOST = String.format("%d.%d.%d.%d", RANDOM.nextInt(Byte.MAX_VALUE),
             RANDOM.nextInt(Byte.MAX_VALUE), RANDOM.nextInt(Byte.MAX_VALUE), RANDOM.nextInt(Byte.MAX_VALUE));
     private static final String PREFIX = RANDOM.nextLong() + "PREFIX";
     private static final int PORT = RANDOM.nextInt(Short.MAX_VALUE);
-    private static final String ADDRESS_AND_PORT = ADDRESS + ':' + PORT;
+    private static final String HOST_AND_PORT = HOST + ':' + PORT;
     private static final int NUMBER_OF_ITERATIONS_IN_TESTS = RANDOM.nextInt(Byte.MAX_VALUE) + 2;
 
     @Mock
@@ -166,7 +166,7 @@ public class MetricPublishingTest {
     private void whensForCreateGraphiteObserver() {
         whensForAsync();
         whensForRateTransform();
-        when(mockGraphiteConfig.address()).thenReturn(ADDRESS);
+        when(mockGraphiteConfig.host()).thenReturn(HOST);
         when(mockGraphiteConfig.port()).thenReturn(PORT);
         when(mockFactory.createGraphiteMetricObserver(anyString(), anyString())).thenReturn(mockGraphiteMetricObserver);
     }
@@ -174,9 +174,9 @@ public class MetricPublishingTest {
     private void verifiesForCreateGraphiteObserver(int pollIntervalSecondsTimes) throws UnknownHostException {
         verifiesForAsync(pollIntervalSecondsTimes, mockGraphiteMetricObserver);
         verifiesForRateTransform(pollIntervalSecondsTimes, mockAsyncMetricObserver);
-        verify(mockGraphiteConfig).address();
+        verify(mockGraphiteConfig).host();
         verify(mockGraphiteConfig).port();
-        verify(mockFactory).createGraphiteMetricObserver(ASYNC_METRIC_OBSERVER_NAME, ADDRESS_AND_PORT);
+        verify(mockFactory).createGraphiteMetricObserver(ASYNC_METRIC_OBSERVER_NAME, HOST_AND_PORT);
     }
 
     @Test
@@ -259,7 +259,7 @@ public class MetricPublishingTest {
 
     @Test
     public void testFactoryCreateGraphiteMetricObserver() {
-        final MetricObserver metricObserver = factory.createGraphiteMetricObserver(PREFIX, ADDRESS_AND_PORT);
+        final MetricObserver metricObserver = factory.createGraphiteMetricObserver(PREFIX, HOST_AND_PORT);
         assertEquals("GraphiteMetricObserver" + PREFIX, metricObserver.getName());
         assertEquals(GraphiteMetricObserver.class, metricObserver.getClass());
     }
