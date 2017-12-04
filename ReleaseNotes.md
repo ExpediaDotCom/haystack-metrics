@@ -1,5 +1,8 @@
 # Release Notes
 
+## 0.2.7 / 2017-12-04 Change "address" to "port" in graphite configuration
+This change makes configuration across Haystack packages using the same name for the graphite (InfluxDb) destination.
+
 ## 0.2.6 / 2017-12-01 Post at the specified polling interval, not twice that value
 The 0.2.5 change accidentally did not get merged before committing and tagging.
 
