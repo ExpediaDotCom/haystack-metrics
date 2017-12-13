@@ -1,5 +1,11 @@
 # Release Notes
 
+## 0.2.9 / 2017-12-12 Add MetricObjects.createResettingNonRateCounter()
+Expose a method to allow the creation of the ResettingNonRateCounter provided in 0.2.8.
+
+## 0.2.8 / 2017-12-12 Add ResettingNonRateCounter
+The Netflix objects all return rates; the new returns a plain count, and a call to getValue() resets that count to 0.
+
 ## 0.2.7 / 2017-12-04 Change "address" to "port" in graphite configuration
 This change makes configuration across Haystack packages using the same name for the graphite (InfluxDb) destination.
 

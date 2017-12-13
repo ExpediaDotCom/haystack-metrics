@@ -19,6 +19,7 @@ package com.expedia.www.haystack.metrics;
 import com.netflix.servo.DefaultMonitorRegistry;
 import com.netflix.servo.MonitorRegistry;
 import com.netflix.servo.annotations.DataSourceType;
+import com.netflix.servo.monitor.BasicCounter;
 import com.netflix.servo.monitor.Counter;
 import com.netflix.servo.monitor.Monitor;
 import com.netflix.servo.monitor.Timer;
@@ -38,6 +39,7 @@ import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_SUBSYSTEM;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -71,7 +73,8 @@ public class MetricObjectsTest {
 
     @After
     public void tearDown() {
-        MetricObjects.COUNTERS.clear();
+        MetricObjects.BASIC_COUNTERS.clear();
+        MetricObjects.RESETTING_NON_RATE_COUNTERS.clear();
         MetricObjects.TIMERS.clear();
         verifyNoMoreInteractions(mockFactory, mockMonitorRegistry, mockLogger);
     }
@@ -102,6 +105,38 @@ public class MetricObjectsTest {
         assertsAndVerifiesForCreateAndRegister(counter, 4);
         final TagList tagList = counter.getConfig().getTags();
         assertEquals(DataSourceType.COUNTER.getValue(), tagList.getValue(DataSourceType.KEY));
+        assertTrue(counter instanceof BasicCounter);
+    }
+
+    @Test
+    public void testCreateAndRegisterResettingNonRateCounter() {
+        when(mockFactory.getMonitorRegistry()).thenReturn(mockMonitorRegistry);
+
+        final Counter counter = metricObjects.createAndRegisterResettingNonRateCounter(
+                SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME);
+
+        assertsAndVerifiesForCreateAndRegisterResettingNonRateCounter(counter);
+    }
+
+    @Test
+    public void testCreateAndRegisterExistingResettingNonRateCounter() {
+        when(mockFactory.getMonitorRegistry()).thenReturn(mockMonitorRegistry);
+
+        final Counter counter = metricObjects.createAndRegisterResettingNonRateCounter(
+                SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME);
+        final Counter existingCounter = metricObjects.createAndRegisterResettingNonRateCounter(
+                SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME);
+
+        assertSame(counter, existingCounter);
+        verify(mockLogger).warn(String.format(MetricObjects.COUNTER_ALREADY_REGISTERED, existingCounter));
+        assertsAndVerifiesForCreateAndRegisterResettingNonRateCounter(counter);
+    }
+
+    private void assertsAndVerifiesForCreateAndRegisterResettingNonRateCounter(Counter counter) {
+        assertsAndVerifiesForCreateAndRegister(counter, 4);
+        final TagList tagList = counter.getConfig().getTags();
+        assertEquals(DataSourceType.COUNTER.getValue(), tagList.getValue(DataSourceType.KEY));
+        assertTrue(counter instanceof ResettingNonRateCounter);
     }
 
     @Test
