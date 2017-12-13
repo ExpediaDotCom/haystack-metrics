@@ -45,7 +45,8 @@ public class MetricObjects {
     static final String TAG_KEY_CLASS = "class";
     static final String COUNTER_ALREADY_REGISTERED = "The Counter %s has already been registered";
     static final String TIMER_ALREADY_REGISTERED = "The Timer %s has already been registered";
-    static final ConcurrentMap<MonitorConfig, Counter> COUNTERS = new ConcurrentHashMap<>();
+    static final ConcurrentMap<MonitorConfig, Counter> BASIC_COUNTERS = new ConcurrentHashMap<>();
+    static final ConcurrentMap<MonitorConfig, Counter> RESETTING_NON_RATE_COUNTERS = new ConcurrentHashMap<>();
     static final ConcurrentMap<MonitorConfig, Timer> TIMERS = new ConcurrentHashMap<>();
 
     private final Factory factory;
@@ -70,7 +71,7 @@ public class MetricObjects {
     }
 
     /**
-     * Creates a new Counter; you should only call this method once for each Counter in your code. This method is
+     * Creates a new BasicCounter; you should only call this method once for each Counter in your code. This method is
      * thread-safe, because both of Servo's implementations of the MonitorRegistry interface use thread-safe
      * implementations to hold the registered monitors: com.netflix.servo.jmx.JmxMonitorRegistry uses a ConcurrentMap,
      * and com.netflix.servo.BasicMonitorRegistry uses Collections.synchronizedSet().
@@ -86,8 +87,33 @@ public class MetricObjects {
      */
     public Counter createAndRegisterCounter(String subsystem, String application, String klass, String counterName) {
         final MonitorConfig monitorConfig = buildMonitorConfig(subsystem, application, klass, counterName);
-        final Counter counter = new BasicCounter(monitorConfig);
-        final Counter existingCounter = COUNTERS.putIfAbsent(monitorConfig, counter);
+        return checkForExistingCounter(
+                monitorConfig, new BasicCounter(monitorConfig), BASIC_COUNTERS);
+    }
+
+    /**
+     * Creates a new ResettingNonRateCounter; you should only call this method once for each Counter in your code. This
+     * method is thread-safe, because both of Servo's implementations of the MonitorRegistry interface use thread-safe
+     * implementations to hold the registered monitors: com.netflix.servo.jmx.JmxMonitorRegistry uses a ConcurrentMap,
+     * and com.netflix.servo.BasicMonitorRegistry uses Collections.synchronizedSet().
+     * If you call the method twice with the same arguments, the Counter created during the first call will be returned
+     * by the second call.
+     *
+     * @param subsystem   the subsystem, typically something like "pipes" or "trends".
+     * @param application the application in the subsystem
+     * @param klass       the metric class, frequently (but not necessarily) the class containing the Counter.
+     * @param counterName the name of the Counter, usually the name of the variable holding the Counter instance;
+     *                    using upper case for counterName is recommended.
+     * @return a new Counter that this method registers in the DefaultMonitorRegistry before returning it.
+     */
+    public Counter createAndRegisterResettingNonRateCounter(String subsystem, String application, String klass, String counterName) {
+        final MonitorConfig monitorConfig = buildMonitorConfig(subsystem, application, klass, counterName);
+        return checkForExistingCounter(
+                monitorConfig, new ResettingNonRateCounter(monitorConfig), RESETTING_NON_RATE_COUNTERS);
+    }
+
+    private Counter checkForExistingCounter(MonitorConfig monitorConfig, Counter counter, ConcurrentMap<MonitorConfig, Counter> counters) {
+        final Counter existingCounter = counters.putIfAbsent(monitorConfig, counter);
         if (existingCounter != null) {
             logger.warn(String.format(COUNTER_ALREADY_REGISTERED, existingCounter.toString()));
             return existingCounter;
