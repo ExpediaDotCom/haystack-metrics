@@ -30,12 +30,13 @@ public class GraphiteConfigImplTest {
     private static final int PORT = RANDOM.nextInt();
     private static final int POLL_INTERVAL_SECONDS = RANDOM.nextInt();
     private static final int QUEUE_SIZE = RANDOM.nextInt();
+    private static final boolean SEND_AS_RATE = RANDOM.nextBoolean();
 
     private GraphiteConfig graphiteConfig;
 
     @Before
     public void setUp() {
-        graphiteConfig = new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE);
+        graphiteConfig = new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE, SEND_AS_RATE);
     }
 
     @Test
@@ -59,17 +60,23 @@ public class GraphiteConfigImplTest {
     }
 
     @Test
+    public void testSendAsRate() {
+        assertEquals(SEND_AS_RATE, graphiteConfig.sendasrate());
+    }
+
+    @Test
     public void testEquals() {
         assertEquals(graphiteConfig, graphiteConfig);
-        assertEquals(graphiteConfig, new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE));
-        assertEquals(new GraphiteConfigImpl(null, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE),
-                new GraphiteConfigImpl(null, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE));
-        assertNotEquals(graphiteConfig, new GraphiteConfigImpl(null, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE));
-        assertNotEquals(new GraphiteConfigImpl(null, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE), graphiteConfig);
-        assertNotEquals(graphiteConfig, new GraphiteConfigImpl("", PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE));
-        assertNotEquals(graphiteConfig, new GraphiteConfigImpl(HOST, PORT + 1, POLL_INTERVAL_SECONDS, QUEUE_SIZE));
-        assertNotEquals(graphiteConfig, new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS + 1, QUEUE_SIZE));
-        assertNotEquals(graphiteConfig, new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE + 1));
+        assertEquals(graphiteConfig, new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE, SEND_AS_RATE));
+        assertEquals(new GraphiteConfigImpl(null, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE, SEND_AS_RATE),
+                new GraphiteConfigImpl(null, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE, SEND_AS_RATE));
+        assertNotEquals(graphiteConfig, new GraphiteConfigImpl(null, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE, SEND_AS_RATE));
+        assertNotEquals(new GraphiteConfigImpl(null, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE, SEND_AS_RATE), graphiteConfig);
+        assertNotEquals(graphiteConfig, new GraphiteConfigImpl("", PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE, SEND_AS_RATE));
+        assertNotEquals(graphiteConfig, new GraphiteConfigImpl(HOST, PORT + 1, POLL_INTERVAL_SECONDS, QUEUE_SIZE, SEND_AS_RATE));
+        assertNotEquals(graphiteConfig, new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS + 1, QUEUE_SIZE, SEND_AS_RATE));
+        assertNotEquals(graphiteConfig, new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE + 1, SEND_AS_RATE));
+        assertNotEquals(graphiteConfig, new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE, !SEND_AS_RATE));
         assertNotEquals(graphiteConfig, null);
         assertNotEquals(graphiteConfig, "");
     }
@@ -77,10 +84,11 @@ public class GraphiteConfigImplTest {
     @Test
     public void testHashCode() {
         assertEquals(graphiteConfig.hashCode(), graphiteConfig.hashCode());
-        assertEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE).hashCode());
-        assertNotEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(null, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE).hashCode());
-        assertNotEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(HOST, PORT + 1, POLL_INTERVAL_SECONDS, QUEUE_SIZE).hashCode());
-        assertNotEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS + 1, QUEUE_SIZE).hashCode());
-        assertNotEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE + 1).hashCode());
+        assertEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE, SEND_AS_RATE).hashCode());
+        assertNotEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(null, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE, SEND_AS_RATE).hashCode());
+        assertNotEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(HOST, PORT + 1, POLL_INTERVAL_SECONDS, QUEUE_SIZE, SEND_AS_RATE).hashCode());
+        assertNotEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS + 1, QUEUE_SIZE, SEND_AS_RATE).hashCode());
+        assertNotEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE + 1, SEND_AS_RATE).hashCode());
+        assertNotEquals(graphiteConfig.hashCode(), new GraphiteConfigImpl(HOST, PORT, POLL_INTERVAL_SECONDS, QUEUE_SIZE, !SEND_AS_RATE).hashCode());
     }
 }

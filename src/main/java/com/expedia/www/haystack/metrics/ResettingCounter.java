@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * This counter differs from {@link com.netflix.servo.monitor.BasicCounter} in that its getValue() method returns the
  * count, not a rate, and in the value reset performed by getValue().
  */
-public final class ResettingNonRateCounter extends AbstractMonitor<Number> implements Counter {
+public final class ResettingCounter extends AbstractMonitor<Number> implements Counter {
     private final AtomicLong count = new AtomicLong();
 
     /**
@@ -22,7 +22,7 @@ public final class ResettingNonRateCounter extends AbstractMonitor<Number> imple
      * @param config the counter configuration
      */
     @SuppressWarnings("WeakerAccess")
-    public ResettingNonRateCounter(MonitorConfig config) {
+    public ResettingCounter(MonitorConfig config) {
         super(config.withAdditionalTag(DataSourceType.COUNTER));
     }
 
@@ -59,10 +59,10 @@ public final class ResettingNonRateCounter extends AbstractMonitor<Number> imple
         if(obj == this) {
             return true;
         }
-        if (obj == null || !(obj instanceof ResettingNonRateCounter)) {
+        if (obj == null || !(obj instanceof ResettingCounter)) {
             return false;
         }
-        ResettingNonRateCounter m = (ResettingNonRateCounter) obj;
+        ResettingCounter m = (ResettingCounter) obj;
         return config.equals(m.getConfig()) && count.get() == m.count.get();
     }
 
@@ -82,6 +82,6 @@ public final class ResettingNonRateCounter extends AbstractMonitor<Number> imple
      */
     @Override
     public String toString() {
-        return "ResettingNonRateCounter{config=" + config + ", count=" + count.get() + '}';
+        return "ResettingCounter{config=" + config + ", count=" + count.get() + '}';
     }
 }

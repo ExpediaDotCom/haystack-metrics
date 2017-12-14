@@ -136,7 +136,7 @@ public class MetricObjectsTest {
         assertsAndVerifiesForCreateAndRegister(counter, 4);
         final TagList tagList = counter.getConfig().getTags();
         assertEquals(DataSourceType.COUNTER.getValue(), tagList.getValue(DataSourceType.KEY));
-        assertTrue(counter instanceof ResettingNonRateCounter);
+        assertTrue(counter instanceof ResettingCounter);
     }
 
     @Test

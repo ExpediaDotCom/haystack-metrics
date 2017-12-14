@@ -115,6 +115,7 @@ public class MetricPublishingTest {
     @Test
     public void testStart() throws UnknownHostException, InterruptedException {
         final List<MetricObserver> observers = whensForStart();
+        when(mockGraphiteConfig.sendasrate()).thenReturn(true);
 
         for(int i = 0 ; i < NUMBER_OF_ITERATIONS_IN_TESTS ; i++) {
             metricPublishing.start(mockGraphiteConfig);
@@ -122,6 +123,7 @@ public class MetricPublishingTest {
 
         // Would mock PollScheduler, but it's final; instead, sleep to give mockTask.run() time to be called
         Thread.sleep(1000);
+        verify(mockGraphiteConfig).sendasrate();
         verifiesForStart(observers);
         metricPublishing.stop();
     }
@@ -147,6 +149,8 @@ public class MetricPublishingTest {
     }
 
     private void verifiesForStart(List<MetricObserver> observers) throws UnknownHostException {
+        verifiesForAsync(3, mockGraphiteMetricObserver);
+        verify(mockFactory).createCounterToRateMetricTransform(mockAsyncMetricObserver, POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
         verifiesForCreateGraphiteObserver(3);
         verify(mockFactory).createMonitorRegistryMetricPoller();
         verify(mockFactory).createTask(mockMetricPoller, observers);
@@ -158,9 +162,11 @@ public class MetricPublishingTest {
         whensForCreateGraphiteObserver();
 
         final MetricObserver metricObserver = metricPublishing.createGraphiteObserver(mockGraphiteConfig);
-        assertSame(mockCounterToRateMetricTransform, metricObserver);
+        assertSame(mockAsyncMetricObserver, metricObserver);
 
-        verifiesForCreateGraphiteObserver(2);
+        verify(mockGraphiteConfig).sendasrate();
+        verifiesForAsync(1, mockGraphiteMetricObserver);
+        verifiesForCreateGraphiteObserver(1);
     }
 
     private void whensForCreateGraphiteObserver() {
@@ -171,9 +177,8 @@ public class MetricPublishingTest {
         when(mockFactory.createGraphiteMetricObserver(anyString(), anyString())).thenReturn(mockGraphiteMetricObserver);
     }
 
-    private void verifiesForCreateGraphiteObserver(int pollIntervalSecondsTimes) throws UnknownHostException {
-        verifiesForAsync(pollIntervalSecondsTimes, mockGraphiteMetricObserver);
-        verifiesForRateTransform(pollIntervalSecondsTimes, mockAsyncMetricObserver);
+    private void verifiesForCreateGraphiteObserver(int wantedNumberOfInvocations) {
+        verify(mockGraphiteConfig, times(wantedNumberOfInvocations)).pollintervalseconds();
         verify(mockGraphiteConfig).host();
         verify(mockGraphiteConfig).port();
         verify(mockFactory).createGraphiteMetricObserver(ASYNC_METRIC_OBSERVER_NAME, HOST_AND_PORT);
@@ -186,18 +191,14 @@ public class MetricPublishingTest {
         final MetricObserver metricObserver = metricPublishing.rateTransform(mockGraphiteConfig, mockMetricObserver);
         assertSame(mockCounterToRateMetricTransform, metricObserver);
 
-        verifiesForRateTransform(1, mockMetricObserver);
+        verify(mockFactory).createCounterToRateMetricTransform(mockMetricObserver, POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        verify(mockGraphiteConfig, times(1)).pollintervalseconds();
     }
 
     private void whensForRateTransform() {
         when(mockFactory.createCounterToRateMetricTransform(any(MetricObserver.class), anyLong(), any(TimeUnit.class)))
                 .thenReturn(mockCounterToRateMetricTransform);
         when(mockGraphiteConfig.pollintervalseconds()).thenReturn(POLL_INTERVAL_SECONDS);
-    }
-
-    private void verifiesForRateTransform(int pollIntervalSecondsTimes, MetricObserver metricObserver) {
-        verify(mockFactory).createCounterToRateMetricTransform(metricObserver, POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
-        verify(mockGraphiteConfig, times(pollIntervalSecondsTimes)).pollintervalseconds();
     }
 
     @Test(expected = IllegalStateException.class)
