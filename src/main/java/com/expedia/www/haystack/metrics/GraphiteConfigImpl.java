@@ -25,13 +25,15 @@ public class GraphiteConfigImpl implements GraphiteConfig {
     private final int port;
     private final int pollintervalseconds;
     private final int queuesize;
+    private final boolean sendasrate;
 
     @SuppressWarnings("WeakerAccess")
-    public GraphiteConfigImpl(String host, int port, int pollintervalseconds, int queuesize) {
+    public GraphiteConfigImpl(String host, int port, int pollintervalseconds, int queuesize, boolean sendasrate) {
         this.host = host;
         this.port = port;
         this.pollintervalseconds = pollintervalseconds;
         this.queuesize = queuesize;
+        this.sendasrate = sendasrate;
     }
 
     @Override
@@ -55,6 +57,12 @@ public class GraphiteConfigImpl implements GraphiteConfig {
     }
 
     @Override
+    public boolean sendasrate() {
+        return sendasrate;
+    }
+
+    @SuppressWarnings("SimplifiableIfStatement")
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -63,8 +71,8 @@ public class GraphiteConfigImpl implements GraphiteConfig {
 
         if (port != that.port) return false;
         if (pollintervalseconds != that.pollintervalseconds) return false;
-        //noinspection SimplifiableIfStatement
         if (queuesize != that.queuesize) return false;
+        if (sendasrate != that.sendasrate) return false;
         return host != null ? host.equals(that.host) : that.host == null;
     }
 
@@ -74,6 +82,7 @@ public class GraphiteConfigImpl implements GraphiteConfig {
         result = 31 * result + port;
         result = 31 * result + pollintervalseconds;
         result = 31 * result + queuesize;
+        result = 31 * result + (sendasrate ? 1 : 0);
         return result;
     }
 }

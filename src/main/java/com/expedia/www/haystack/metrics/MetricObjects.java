@@ -92,7 +92,7 @@ public class MetricObjects {
     }
 
     /**
-     * Creates a new ResettingNonRateCounter; you should only call this method once for each Counter in your code. This
+     * Creates a new ResettingCounter; you should only call this method once for each Counter in your code. This
      * method is thread-safe, because both of Servo's implementations of the MonitorRegistry interface use thread-safe
      * implementations to hold the registered monitors: com.netflix.servo.jmx.JmxMonitorRegistry uses a ConcurrentMap,
      * and com.netflix.servo.BasicMonitorRegistry uses Collections.synchronizedSet().
@@ -109,7 +109,7 @@ public class MetricObjects {
     public Counter createAndRegisterResettingNonRateCounter(String subsystem, String application, String klass, String counterName) {
         final MonitorConfig monitorConfig = buildMonitorConfig(subsystem, application, klass, counterName);
         return checkForExistingCounter(
-                monitorConfig, new ResettingNonRateCounter(monitorConfig), RESETTING_NON_RATE_COUNTERS);
+                monitorConfig, new ResettingCounter(monitorConfig), RESETTING_NON_RATE_COUNTERS);
     }
 
     private Counter checkForExistingCounter(MonitorConfig monitorConfig, Counter counter, ConcurrentMap<MonitorConfig, Counter> counters) {

@@ -47,4 +47,11 @@ public interface GraphiteConfig {
      * @return the queue size to use
      */
     int queuesize();
+
+    /**
+     * Indicates if the metric should be sent as a rate, or not
+     *
+     * @return true if the metric should be sent is a rate, else false
+     */
+    boolean sendasrate();
 }

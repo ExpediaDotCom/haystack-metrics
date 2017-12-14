@@ -93,8 +93,9 @@ public class MetricPublishing {
 
     MetricObserver createGraphiteObserver(GraphiteConfig graphiteConfig) {
         final String hostAndPort = graphiteConfig.host() + ":" + graphiteConfig.port();
-        return rateTransform(graphiteConfig,
-                async(graphiteConfig, factory.createGraphiteMetricObserver(ASYNC_METRIC_OBSERVER_NAME, hostAndPort)));
+        final MetricObserver graphiteMetricObserver = factory.createGraphiteMetricObserver(ASYNC_METRIC_OBSERVER_NAME, hostAndPort);
+        final MetricObserver async = async(graphiteConfig, graphiteMetricObserver);
+        return graphiteConfig.sendasrate() ? rateTransform(graphiteConfig, async) : async;
     }
 
     MetricObserver rateTransform(GraphiteConfig graphiteConfig, MetricObserver observer) {
