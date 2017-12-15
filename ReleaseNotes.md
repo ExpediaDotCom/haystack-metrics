@@ -1,8 +1,11 @@
 # Release Notes
 
+## 0.4.0 / 2017-12-15 Change new API to not include "NonRate" as part of its name
+The renaming of the previous version was not quite complete; the API name (created in 0.2.9) needs to change as well.
+
 ## 0.3.0 / 2017-12-14 Add a configuration to control whether or not the metrics are all transformed to rates
 The NetFlix rule is "all metrics are sent as rates"; this package allows, under configuration, counters to be sent
-as straight counts. Also renamed ResettingNonRateCounter to ResettingCounter
+as straight counts. Also renamed ResettingNonRateCounter to ResettingCounter.
 
 ## 0.2.9 / 2017-12-12 Add MetricObjects.createResettingNonRateCounter()
 Expose a method to allow the creation of the ResettingNonRateCounter provided in 0.2.8.

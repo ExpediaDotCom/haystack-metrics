@@ -109,30 +109,30 @@ public class MetricObjectsTest {
     }
 
     @Test
-    public void testCreateAndRegisterResettingNonRateCounter() {
+    public void testCreateAndRegisterResettingCounter() {
         when(mockFactory.getMonitorRegistry()).thenReturn(mockMonitorRegistry);
 
-        final Counter counter = metricObjects.createAndRegisterResettingNonRateCounter(
+        final Counter counter = metricObjects.createAndRegisterResettingCounter(
                 SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME);
 
-        assertsAndVerifiesForCreateAndRegisterResettingNonRateCounter(counter);
+        assertsAndVerifiesForCreateAndRegisterResettingCounter(counter);
     }
 
     @Test
-    public void testCreateAndRegisterExistingResettingNonRateCounter() {
+    public void testCreateAndRegisterExistingResettingCounter() {
         when(mockFactory.getMonitorRegistry()).thenReturn(mockMonitorRegistry);
 
-        final Counter counter = metricObjects.createAndRegisterResettingNonRateCounter(
+        final Counter counter = metricObjects.createAndRegisterResettingCounter(
                 SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME);
-        final Counter existingCounter = metricObjects.createAndRegisterResettingNonRateCounter(
+        final Counter existingCounter = metricObjects.createAndRegisterResettingCounter(
                 SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME);
 
         assertSame(counter, existingCounter);
         verify(mockLogger).warn(String.format(MetricObjects.COUNTER_ALREADY_REGISTERED, existingCounter));
-        assertsAndVerifiesForCreateAndRegisterResettingNonRateCounter(counter);
+        assertsAndVerifiesForCreateAndRegisterResettingCounter(counter);
     }
 
-    private void assertsAndVerifiesForCreateAndRegisterResettingNonRateCounter(Counter counter) {
+    private void assertsAndVerifiesForCreateAndRegisterResettingCounter(Counter counter) {
         assertsAndVerifiesForCreateAndRegister(counter, 4);
         final TagList tagList = counter.getConfig().getTags();
         assertEquals(DataSourceType.COUNTER.getValue(), tagList.getValue(DataSourceType.KEY));
