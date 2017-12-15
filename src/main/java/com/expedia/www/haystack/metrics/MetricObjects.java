@@ -106,7 +106,7 @@ public class MetricObjects {
      *                    using upper case for counterName is recommended.
      * @return a new Counter that this method registers in the DefaultMonitorRegistry before returning it.
      */
-    public Counter createAndRegisterResettingNonRateCounter(String subsystem, String application, String klass, String counterName) {
+    public Counter createAndRegisterResettingCounter(String subsystem, String application, String klass, String counterName) {
         final MonitorConfig monitorConfig = buildMonitorConfig(subsystem, application, klass, counterName);
         return checkForExistingCounter(
                 monitorConfig, new ResettingCounter(monitorConfig), RESETTING_NON_RATE_COUNTERS);
