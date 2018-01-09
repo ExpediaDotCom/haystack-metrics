@@ -34,7 +34,11 @@ import java.util.List;
 import java.util.Random;
 
 import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_APPLICATION;
-import static com.expedia.www.haystack.metrics.ServoToInfluxDbViaGraphiteNamingConvention.METRIC_FORMAT;
+import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_FULLY_QUALIFIED_CLASS_NAME;
+import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_LINE_NUMBER;
+import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_METRIC_GROUP;
+import static com.expedia.www.haystack.metrics.ServoToInfluxDbViaGraphiteNamingConvention.METRIC_FORMAT_6_ARGS;
+import static com.expedia.www.haystack.metrics.ServoToInfluxDbViaGraphiteNamingConvention.METRIC_FORMAT_7_ARGS;
 import static com.expedia.www.haystack.metrics.ServoToInfluxDbViaGraphiteNamingConvention.MISSING_TAG;
 import static com.expedia.www.haystack.metrics.ServoToInfluxDbViaGraphiteNamingConvention.STATISTIC_TAG_NAME;
 import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_CLASS;
@@ -46,11 +50,15 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 public class ServoToInfluxDbViaGraphiteNamingConventionTest {
     private final static Random RANDOM = new Random();
     private final static String METRIC_NAME = RANDOM.nextLong() + "METRIC_NAME";
+    private final static String METRIC_GROUP = RANDOM.nextLong() + "METRIC_GROUP";
     private final static String SUBSYSTEM = RANDOM.nextLong() + "SUBSYSTEM";
     private final static String APPLICATION = RANDOM.nextLong() + "APPLICATION";
+    private final static String FULLY_QUALIFIED_CLASS_NAME = RANDOM.nextLong() + "FULLY_QUALIFIED_CLASS_NAME";
     private final static String CLASS = RANDOM.nextLong() + "CLASS";
+    private final static String LINE_NUMBER = Integer.toString(RANDOM.nextInt(Integer.MAX_VALUE));
     private final static String TYPE = RANDOM.nextLong() + "TYPE";
     private final static String STATISTIC = RANDOM.nextLong() + "STATISTIC";
+    private static final String TYPE_STATISTIC = TYPE + '_' + STATISTIC;
     private final static String LOCAL_HOST_NAME = "127.0.0.1";
     private final static String LOCAL_HOST_NAME_CLEANED = LOCAL_HOST_NAME.replace(".", "_");
 
@@ -75,7 +83,7 @@ public class ServoToInfluxDbViaGraphiteNamingConventionTest {
 
         final String name = servoToInfluxDbViaGraphiteNamingConvention.getName(metric);
 
-        final String expected = String.format(METRIC_FORMAT,
+        final String expected = String.format(METRIC_FORMAT_6_ARGS,
                 String.format(MISSING_TAG, TAG_KEY_SUBSYSTEM),
                 String.format(MISSING_TAG, TAG_KEY_APPLICATION), LOCAL_HOST_NAME_CLEANED,
                 String.format(MISSING_TAG, TAG_KEY_CLASS), METRIC_NAME,
@@ -95,7 +103,7 @@ public class ServoToInfluxDbViaGraphiteNamingConventionTest {
         final String name = servoToInfluxDbViaGraphiteNamingConvention.getName(metric);
 
         assertEquals(String.format(
-                METRIC_FORMAT, SUBSYSTEM, APPLICATION, LOCAL_HOST_NAME_CLEANED, CLASS, METRIC_NAME, TYPE), name);
+                METRIC_FORMAT_6_ARGS, SUBSYSTEM, APPLICATION, LOCAL_HOST_NAME_CLEANED, CLASS, METRIC_NAME, TYPE), name);
     }
 
     @Test
@@ -110,8 +118,26 @@ public class ServoToInfluxDbViaGraphiteNamingConventionTest {
 
         final String name = servoToInfluxDbViaGraphiteNamingConvention.getName(metric);
 
-        final String expected = String.format(METRIC_FORMAT,
-                SUBSYSTEM, APPLICATION, LOCAL_HOST_NAME_CLEANED, CLASS, METRIC_NAME, TYPE + '_' + STATISTIC);
+        final String expected = String.format(METRIC_FORMAT_6_ARGS,
+                SUBSYSTEM, APPLICATION, LOCAL_HOST_NAME_CLEANED, CLASS, METRIC_NAME, TYPE_STATISTIC);
+        assertEquals(expected, name);
+    }
+
+    @Test
+    public void testGetNameErrorCase() {
+        final List<Tag> tagList = new ArrayList<>(6);
+        tagList.add(Tags.newTag(TAG_KEY_METRIC_GROUP, METRIC_GROUP));
+        tagList.add(Tags.newTag(TAG_KEY_SUBSYSTEM, SUBSYSTEM));
+        tagList.add(Tags.newTag(TAG_KEY_FULLY_QUALIFIED_CLASS_NAME, FULLY_QUALIFIED_CLASS_NAME));
+        tagList.add(Tags.newTag(TAG_KEY_LINE_NUMBER, LINE_NUMBER));
+        tagList.add(Tags.newTag(DataSourceType.KEY, TYPE));
+        tagList.add(Tags.newTag(STATISTIC_TAG_NAME, STATISTIC));
+        final Metric metric = new Metric(METRIC_NAME, new BasicTagList(tagList), 0, 0);
+
+        final String name = servoToInfluxDbViaGraphiteNamingConvention.getName(metric);
+
+        final String expected = String.format(METRIC_FORMAT_7_ARGS, METRIC_GROUP, SUBSYSTEM, FULLY_QUALIFIED_CLASS_NAME,
+                LOCAL_HOST_NAME_CLEANED, LINE_NUMBER, METRIC_NAME, TYPE_STATISTIC);
         assertEquals(expected, name);
     }
 }

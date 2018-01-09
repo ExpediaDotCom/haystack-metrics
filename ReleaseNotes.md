@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.5.0 / 2018-01-09 Add new API with one more tag
+This was needed for the ERROR_COUNTER use case in the custom logback/log4j appenders, to enable the identification of
+subsystem in the metrics.
+
 ## 0.4.0 / 2017-12-15 Change new API to not include "NonRate" as part of its name
 The renaming of the previous version was not quite complete; the API name (created in 0.2.9) needs to change as well.
 

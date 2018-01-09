@@ -35,6 +35,9 @@ import org.slf4j.Logger;
 import java.util.Random;
 
 import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_CLASS;
+import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_FULLY_QUALIFIED_CLASS_NAME;
+import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_LINE_NUMBER;
+import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_METRIC_GROUP;
 import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_SUBSYSTEM;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
@@ -47,9 +50,12 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class MetricObjectsTest {
     private final static Random RANDOM = new Random();
+    private final static String METRIC_GROUP = RANDOM.nextLong() + "METRIC_GROUP";
     private final static String SUBSYSTEM = RANDOM.nextLong() + "SUBSYSTEM";
     private final static String APPLICATION = RANDOM.nextLong() + "APPLICATION";
+    private final static String FULLY_QUALIFIED_CLASS_NAME = RANDOM.nextLong() + "FULLY_QUALIFIED_CLASS_NAME";
     private final static String CLASS = RANDOM.nextLong() + "CLASS";
+    private final static String LINE_NUMBER = Integer.toString(RANDOM.nextInt(Integer.MAX_VALUE));
     private final static String METRIC_NAME = RANDOM.nextLong() + "METRIC_NAME";
 
     @Mock
@@ -140,6 +146,37 @@ public class MetricObjectsTest {
     }
 
     @Test
+    public void testCreateAndRegisterResettingCounterErrorType() {
+        when(mockFactory.getMonitorRegistry()).thenReturn(mockMonitorRegistry);
+
+        final Counter counter = metricObjects.createAndRegisterResettingCounter(
+                SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME);
+
+        assertsAndVerifiesForCreateAndRegisterResettingCounter(counter);
+    }
+
+    @Test
+    public void testCreateAndRegisterExistingResettingCounterErrorType() {
+        when(mockFactory.getMonitorRegistry()).thenReturn(mockMonitorRegistry);
+
+        final Counter counter = metricObjects.createAndRegisterResettingCounter(
+                METRIC_GROUP, SUBSYSTEM, FULLY_QUALIFIED_CLASS_NAME, LINE_NUMBER, METRIC_NAME);
+        final Counter existingCounter = metricObjects.createAndRegisterResettingCounter(
+                METRIC_GROUP, SUBSYSTEM, FULLY_QUALIFIED_CLASS_NAME, LINE_NUMBER, METRIC_NAME);
+
+        assertSame(counter, existingCounter);
+        verify(mockLogger).warn(String.format(MetricObjects.COUNTER_ALREADY_REGISTERED, existingCounter));
+        assertsAndVerifiesForCreateAndRegisterResettingCounterErrorType(counter);
+    }
+
+    private void assertsAndVerifiesForCreateAndRegisterResettingCounterErrorType(Counter counter) {
+        assertsAndVerifiesForCreateAndRegisterErrorType(counter);
+        final TagList tagList = counter.getConfig().getTags();
+        assertEquals(DataSourceType.COUNTER.getValue(), tagList.getValue(DataSourceType.KEY));
+        assertTrue(counter instanceof ResettingCounter);
+    }
+
+    @Test
     public void testCreateAndRegisterBasicTimer() {
         when(mockFactory.getMonitorRegistry()).thenReturn(mockMonitorRegistry);
 
@@ -168,6 +205,18 @@ public class MetricObjectsTest {
         assertEquals(expectedTagListSize, tagList.size());
         assertEquals(SUBSYSTEM, tagList.getValue(TAG_KEY_SUBSYSTEM));
         assertEquals(CLASS, tagList.getValue(TAG_KEY_CLASS));
+        assertEquals(METRIC_NAME, monitor.getConfig().getName());
+        verify(mockMonitorRegistry).register(monitor);
+        verify(mockFactory).getMonitorRegistry();
+    }
+
+    private void assertsAndVerifiesForCreateAndRegisterErrorType(Monitor<?> monitor) {
+        final TagList tagList = monitor.getConfig().getTags();
+        assertEquals(5, tagList.size());
+        assertEquals(METRIC_GROUP, tagList.getValue(TAG_KEY_METRIC_GROUP));
+        assertEquals(SUBSYSTEM, tagList.getValue(TAG_KEY_SUBSYSTEM));
+        assertEquals(FULLY_QUALIFIED_CLASS_NAME, tagList.getValue(TAG_KEY_FULLY_QUALIFIED_CLASS_NAME));
+        assertEquals(LINE_NUMBER, tagList.getValue(TAG_KEY_LINE_NUMBER));
         assertEquals(METRIC_NAME, monitor.getConfig().getName());
         verify(mockMonitorRegistry).register(monitor);
         verify(mockFactory).getMonitorRegistry();

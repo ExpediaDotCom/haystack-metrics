@@ -40,9 +40,12 @@ import java.util.concurrent.TimeUnit;
  */
 @SuppressWarnings("WeakerAccess")
 public class MetricObjects {
+    static final String TAG_KEY_METRIC_GROUP = "metricGroup";
     static final String TAG_KEY_SUBSYSTEM = "subsystem";
     static final String TAG_KEY_APPLICATION = "application";
+    static final String TAG_KEY_FULLY_QUALIFIED_CLASS_NAME = "fullyQualifiedClassName";
     static final String TAG_KEY_CLASS = "class";
+    static final String TAG_KEY_LINE_NUMBER = "lineNumber";
     static final String COUNTER_ALREADY_REGISTERED = "The Counter %s has already been registered";
     static final String TIMER_ALREADY_REGISTERED = "The Timer %s has already been registered";
     static final ConcurrentMap<MonitorConfig, Counter> BASIC_COUNTERS = new ConcurrentHashMap<>();
@@ -92,12 +95,12 @@ public class MetricObjects {
     }
 
     /**
-     * Creates a new ResettingCounter; you should only call this method once for each Counter in your code. This
-     * method is thread-safe, because both of Servo's implementations of the MonitorRegistry interface use thread-safe
-     * implementations to hold the registered monitors: com.netflix.servo.jmx.JmxMonitorRegistry uses a ConcurrentMap,
-     * and com.netflix.servo.BasicMonitorRegistry uses Collections.synchronizedSet().
-     * If you call the method twice with the same arguments, the Counter created during the first call will be returned
-     * by the second call.
+     * Creates a new ResettingCounter with three tags; you should only call this method once for each Counter in your
+     * code. This method is thread-safe, because both of Servo's implementations of the MonitorRegistry interface use
+     * thread-safe implementations to hold the registered monitors: com.netflix.servo.jmx.JmxMonitorRegistry uses a
+     * ConcurrentMap, and com.netflix.servo.BasicMonitorRegistry uses Collections.synchronizedSet(). If you call the
+     * method twice with the same arguments, the Counter created during the first call will be returned by the second
+     * call.
      *
      * @param subsystem   the subsystem, typically something like "pipes" or "trends".
      * @param application the application in the subsystem
@@ -108,6 +111,35 @@ public class MetricObjects {
      */
     public Counter createAndRegisterResettingCounter(String subsystem, String application, String klass, String counterName) {
         final MonitorConfig monitorConfig = buildMonitorConfig(subsystem, application, klass, counterName);
+        return checkForExistingCounter(
+                monitorConfig, new ResettingCounter(monitorConfig), RESETTING_NON_RATE_COUNTERS);
+    }
+
+    /**
+     * Creates a new ResettingCounter with four tags; you should only call this method once for each Counter in your
+     * code. This method is thread-safe, because both of Servo's implementations of the MonitorRegistry interface use
+     * thread-safe implementations to hold the registered monitors: com.netflix.servo.jmx.JmxMonitorRegistry uses a
+     * ConcurrentMap, and com.netflix.servo.BasicMonitorRegistry uses Collections.synchronizedSet(). If you call the
+     * method twice with the same arguments, the Counter created during the first call will be returned by the second
+     * call.
+     *
+     * @param metricGroup             the metric group, typically "errors" (the first use case for which this API was
+     *                                written)
+     * @param subsystem               the subsystem, typically something like "pipes" or "trends".
+     * @param fullyQualifiedClassName the fully (package) qualified class name, with '.' replaced by '-'
+     * @param lineNumber              the line number of the source code at which the error occurred or was logged
+     * @param counterName             the name of the Counter, usually the name of the variable holding the Counter
+     *                                instance;
+     *                                using upper case for counterName is recommended.
+     * @return a new Counter that this method registers in the DefaultMonitorRegistry before returning it.
+     */
+    public Counter createAndRegisterResettingCounter(String metricGroup,
+                                                     String subsystem,
+                                                     String fullyQualifiedClassName,
+                                                     String lineNumber,
+                                                     String counterName) {
+        final MonitorConfig monitorConfig = buildMonitorConfig(
+                metricGroup, subsystem, fullyQualifiedClassName, lineNumber, counterName);
         return checkForExistingCounter(
                 monitorConfig, new ResettingCounter(monitorConfig), RESETTING_NON_RATE_COUNTERS);
     }
@@ -149,9 +181,28 @@ public class MetricObjects {
         return basicTimer;
     }
 
+    private MonitorConfig buildMonitorConfig(String metricGroup,
+                                             String subsystem,
+                                             String fullyQualifiedClassName,
+                                             String lineNumber,
+                                             String monitorName) {
+        final TaggingContext taggingContext = () -> getTags(metricGroup, subsystem, fullyQualifiedClassName, lineNumber);
+        return MonitorConfig.builder(monitorName).withTags(taggingContext.getTags()).build();
+    }
+
     private MonitorConfig buildMonitorConfig(String subsystem, String application, String klass, String monitorName) {
         final TaggingContext taggingContext = () -> getTags(subsystem, application, klass);
         return MonitorConfig.builder(monitorName).withTags(taggingContext.getTags()).build();
+    }
+
+    private static TagList getTags(
+            String metricGroup, String subsystem, String fullyQualifiedClassName, String lineNumber) {
+        final SmallTagMap.Builder builder = new SmallTagMap.Builder(4);
+        builder.add(Tags.newTag(TAG_KEY_METRIC_GROUP, metricGroup));
+        builder.add(Tags.newTag(TAG_KEY_SUBSYSTEM, subsystem));
+        builder.add(Tags.newTag(TAG_KEY_FULLY_QUALIFIED_CLASS_NAME, fullyQualifiedClassName));
+        builder.add(Tags.newTag(TAG_KEY_LINE_NUMBER, lineNumber));
+        return new BasicTagList(builder.result());
     }
 
     private static TagList getTags(String subsystem, String application, String klass) {
