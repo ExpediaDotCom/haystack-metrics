@@ -42,7 +42,7 @@ public static final String SUBSYSTEM = "subsystemName"; // e.g. "pipes" or "tren
 Applications are in the subsystem's git repository, and good practice is to store the application name at a high level
 in the application's code hierarchy.
 ```
-public static final String SUBSYSTEM = "applicationName";
+public static final String APPLICATION = "applicationName";
 ```
 ##### Class
 Creating a Servo object also requires a "class" String, which is often the Java class or Scala object containing the
@@ -51,14 +51,17 @@ object:
 private static final String CLASS_NAME = ClassContainingTheCounter.class.getSimpleName();
 ```
 Refactoring or renaming may well lead to changing the name of the Java class or Scala object in which the Servo object
-resides, so it also acceptable to choose a "class" String that will never change:
+resides, so it also acceptable to choose a "class" String that will never change (and that may not even correspond to
+an actual class in your code base):
 ```
 private static final String CLASS_NAME = "JsonSerialization";
 ```
 ##### Singleton
 Your Servo objects should be singletons, either as static (Java) or object (Scala) variables. The MetricObjects
-variable with which you create them can be managed by a Dependency Injection (DI) framework or not, as you see fit.
-(The examples below show the creation of a new MetricsObject with the creation of each Servo object.) 
+variable with which you create them can be managed by a Dependency Injection (DI) framework or not, as you see fit;
+note that if they are managed by a DI framework like [Spring](https://projects.spring.io/spring-framework/)
+you can choose to let Spring manage the singleton and inject the same Servo object into each object that Spring
+instantiates. (The examples below show the creation of a new MetricsObject with the creation of each Servo object.) 
 Servo objects are specified with Identifiers:
 1. Subsystem
 2. Application
