@@ -1,3 +1,4 @@
+[![Coverage Status](https://coveralls.io/repos/github/ExpediaDotCom/haystack-metrics/badge.svg?branch=master)](https://coveralls.io/github/ExpediaDotCom/haystack-metrics?branch=master)
 # haystack-metrics
 This haystack-metrics module contains code needed by most or all of the other modules in the Haystack code base.
 
@@ -75,7 +76,8 @@ static final Counter REQUEST = (new MetricObjects()).createAndRegisterCounter(
 ```
 Because the Servo Counter generates a RATE metric, using upper case for the variable name `REQUEST` and the counter name 
 `"REQUEST"` is recommended because doing so results in an sensibly named complete metric name of `REQUEST_RATE` in
-InfluxDb, as explained in the "Graphite Bridge" section of this document.
+InfluxDb, as explained in the "Graphite Bridge" section of this document. The `sendasrate`configuration controls whether
+rates or counts are sent by the Counters (simple counts are easier to understand and often just as useful as rates).
 ##### Usage
 Simply increment the Counter to count:
 ```
@@ -131,6 +133,7 @@ haystack:
      port: 2003 # Graphite port; typically 2003
      pollintervalseconds: 60
      queuesize: 10
+     sendasrate: false
 ```
 ### Graphite Bridge
 The "Graphite Bridge" connects Servo metrics from the application to the Haystack InfluxDb via Graphite 
