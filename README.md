@@ -1,4 +1,5 @@
 [![Coverage Status](https://coveralls.io/repos/github/ExpediaDotCom/haystack-metrics/badge.svg?branch=master)](https://coveralls.io/github/ExpediaDotCom/haystack-metrics?branch=master)
+[![Build Status](https://travis-ci.org/ExpediaDotCom/haystack-metrics.svg?branch=master)](https://travis-ci.org/ExpediaDotCom/haystack-metrics)
 # haystack-metrics
 This haystack-metrics module contains code needed by most or all of the other modules in the Haystack code base.
 
