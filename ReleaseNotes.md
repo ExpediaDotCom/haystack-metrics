@@ -1,5 +1,8 @@
 # Release Notes
 
+## 0.6.0 / 2018-02-08 Ignore IllegalStateException in MetricPublishing.stop()
+In case it wasn't started; this solves a problem seen when starting a Spring application that uses Logback. 
+
 ## 0.5.0 / 2018-01-09 Add new API with one more tag
 This was needed for the ERROR_COUNTER use case in the custom logback/log4j appenders, to enable the identification of
 subsystem in the metrics.

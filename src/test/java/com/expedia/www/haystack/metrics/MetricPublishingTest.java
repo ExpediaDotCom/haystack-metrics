@@ -113,7 +113,7 @@ public class MetricPublishingTest {
     }
 
     @Test
-    public void testStart() throws UnknownHostException, InterruptedException {
+    public void testStart() throws InterruptedException {
         final List<MetricObserver> observers = whensForStart();
         when(mockGraphiteConfig.sendasrate()).thenReturn(true);
 
@@ -148,7 +148,7 @@ public class MetricPublishingTest {
         return Collections.singletonList(mockCounterToRateMetricTransform);
     }
 
-    private void verifiesForStart(List<MetricObserver> observers) throws UnknownHostException {
+    private void verifiesForStart(List<MetricObserver> observers) {
         verifiesForAsync(3, mockGraphiteMetricObserver);
         verify(mockFactory).createCounterToRateMetricTransform(mockAsyncMetricObserver, POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
         verifiesForCreateGraphiteObserver(3);
@@ -158,7 +158,7 @@ public class MetricPublishingTest {
     }
 
     @Test
-    public void testCreateGraphiteObserver() throws UnknownHostException {
+    public void testCreateGraphiteObserver() {
         whensForCreateGraphiteObserver();
 
         final MetricObserver metricObserver = metricPublishing.createGraphiteObserver(mockGraphiteConfig);
@@ -201,17 +201,13 @@ public class MetricPublishingTest {
         when(mockGraphiteConfig.pollintervalseconds()).thenReturn(POLL_INTERVAL_SECONDS);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testStopWithoutCallingStartFirst() {
-        try {
-            metricPublishing.stop();
-        } catch (IllegalStateException e) {
-            // PollScheduler is a final class and cannot be mocked with Mockito, so traditional verification of
-            // metricPublishing.stop() cannot be done. Instead, don't call start(), and catch the resulting exception
-            // that will only occur when stop() is called without calling start().
-            assertEquals("scheduler must be started before you stop it", e.getMessage());
-            throw e;
-        }
+        metricPublishing.stop();
+        // PollScheduler is a final class and cannot be mocked with Mockito, so traditional verification of
+        // metricPublishing.stop() cannot be done. Instead, don't call start(), and catch the resulting exception
+        // that will only occur when stop() is called without calling start(). This exception is caught and ignored
+        // by MetricPublishing.stop(). Since it is silently ignored, only code coverage verifies the ignoring behavior.
     }
 
     @Test

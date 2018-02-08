@@ -88,7 +88,11 @@ public class MetricPublishing {
      * Stops the polling that publishes metrics; for maximum safety, call this method before calling System.exit().
      */
     public void stop() {
-        pollScheduler.stop();
+        try {
+            pollScheduler.stop();
+        } catch(IllegalStateException e) {
+            // The poller wasn't started; just ignore this error
+        }
     }
 
     MetricObserver createGraphiteObserver(GraphiteConfig graphiteConfig) {
