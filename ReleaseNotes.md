@@ -1,5 +1,11 @@
 # Release Notes
 
+## 0.7.0 / 2018-02-02 Perform environment variable substitution on GraphiteConfig.host()
+Log4j2 parsing of YAML files does not perform environment variable substitution, so Haystack's use of the
+[haystack-log4j-metrics-appender](https://github.com/ExpediaDotCom/haystack-log4j-metrics-appender) package wasn't
+working properly without this change. Note this this means that, absent another fix, port cannot be specified in an
+environment variable. (That fix is more extensive and will require treating port as a String until the last moment.)
+
 ## 0.6.0 / 2018-02-08 Ignore IllegalStateException in MetricPublishing.stop()
 In case it wasn't started; this solves a problem seen when starting a Spring application that uses Logback. 
 
