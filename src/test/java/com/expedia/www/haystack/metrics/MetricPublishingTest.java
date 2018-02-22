@@ -37,12 +37,14 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import static com.expedia.www.haystack.metrics.MetricPublishing.ASYNC_METRIC_OBSERVER_NAME;
 import static com.expedia.www.haystack.metrics.MetricPublishing.HOST_NAME_UNKNOWN_HOST_EXCEPTION;
 import static com.expedia.www.haystack.metrics.MetricPublishing.POLL_INTERVAL_SECONDS_TO_EXPIRE_TIME_MULTIPLIER;
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Matchers.any;
@@ -68,6 +70,7 @@ public class MetricPublishingTest {
     private static final int PORT = RANDOM.nextInt(Short.MAX_VALUE);
     private static final String HOST_AND_PORT = HOST + ':' + PORT;
     private static final int NUMBER_OF_ITERATIONS_IN_TESTS = RANDOM.nextInt(Byte.MAX_VALUE) + 2;
+    private static final Map<String,String> ENVIRONMENT_VARIABLES = singletonMap("GRAPHITE_HOST", HOST);
 
     @Mock
     private Factory mockFactory;
@@ -99,6 +102,7 @@ public class MetricPublishingTest {
 
     @Before
     public void setUp() {
+        when(mockFactory.getEnvironmentVariables()).thenReturn(ENVIRONMENT_VARIABLES);
         metricPublishing = new MetricPublishing(mockFactory);
         factory = new Factory();
     }
@@ -172,7 +176,8 @@ public class MetricPublishingTest {
     private void whensForCreateGraphiteObserver() {
         whensForAsync();
         whensForRateTransform();
-        when(mockGraphiteConfig.host()).thenReturn(HOST);
+        when(mockGraphiteConfig.host()).thenReturn("${GRAPHITE_HOST}");
+        when(mockFactory.getEnvironmentVariables()).thenReturn(ENVIRONMENT_VARIABLES);
         when(mockGraphiteConfig.port()).thenReturn(PORT);
         when(mockFactory.createGraphiteMetricObserver(anyString(), anyString())).thenReturn(mockGraphiteMetricObserver);
     }
@@ -180,6 +185,7 @@ public class MetricPublishingTest {
     private void verifiesForCreateGraphiteObserver(int wantedNumberOfInvocations) {
         verify(mockGraphiteConfig, times(wantedNumberOfInvocations)).pollintervalseconds();
         verify(mockGraphiteConfig).host();
+        verify(mockFactory).getEnvironmentVariables();
         verify(mockGraphiteConfig).port();
         verify(mockFactory).createGraphiteMetricObserver(ASYNC_METRIC_OBSERVER_NAME, HOST_AND_PORT);
     }
@@ -235,6 +241,16 @@ public class MetricPublishingTest {
     }
 
     @Test
+    public void getGetHostNoEnvironmentVariableSubstitution() {
+        when(mockGraphiteConfig.host()).thenReturn(HOST);
+
+        final String host = metricPublishing.getHost(mockGraphiteConfig);
+
+        assertEquals(HOST, host);
+        verify(mockGraphiteConfig).host();
+    }
+
+    @Test
     public void testFactoryCreateAsyncMetricObserver() {
         final MetricObserver metricObserver = factory.createAsyncMetricObserver(
                 mockMetricObserver, QUEUE_SIZE, EXPIRE_TIME);
@@ -269,6 +285,13 @@ public class MetricPublishingTest {
         task.run();
 
         verify(mockMetricPoller).poll(BasicMetricFilter.MATCH_ALL, true);
+    }
+
+    @Test
+    public void testFactoryGetEnvironmentVariables() {
+        final Map<String, String> environmentVariables = factory.getEnvironmentVariables();
+
+        assertSame(environmentVariables, System.getenv());
     }
 
     @Test

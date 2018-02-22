@@ -25,12 +25,14 @@ import com.netflix.servo.publish.MonitorRegistryMetricPoller;
 import com.netflix.servo.publish.PollRunnable;
 import com.netflix.servo.publish.PollScheduler;
 import com.netflix.servo.publish.graphite.GraphiteMetricObserver;
+import com.netflix.servo.util.VisibleForTesting;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -44,6 +46,8 @@ public class MetricPublishing {
     static final String ASYNC_METRIC_OBSERVER_NAME = "haystack";
     static final int POLL_INTERVAL_SECONDS_TO_EXPIRE_TIME_MULTIPLIER = 2000;
     static final String HOST_NAME_UNKNOWN_HOST_EXCEPTION = "HostName-UnknownHostException";
+    private static final String PREFIX = "${";
+    private static final String SUFFIX = "}";
 
     private final Factory factory;
     private final PollScheduler pollScheduler = PollScheduler.getInstance();
@@ -96,10 +100,23 @@ public class MetricPublishing {
     }
 
     MetricObserver createGraphiteObserver(GraphiteConfig graphiteConfig) {
-        final String hostAndPort = graphiteConfig.host() + ":" + graphiteConfig.port();
+        final String host = getHost(graphiteConfig);
+        final String hostAndPort = host + ":" + graphiteConfig.port();
         final MetricObserver graphiteMetricObserver = factory.createGraphiteMetricObserver(ASYNC_METRIC_OBSERVER_NAME, hostAndPort);
         final MetricObserver async = async(graphiteConfig, graphiteMetricObserver);
         return graphiteConfig.sendasrate() ? rateTransform(graphiteConfig, async) : async;
+    }
+
+    @VisibleForTesting
+    String getHost(GraphiteConfig graphiteConfig) {
+        final String graphiteConfigHost = graphiteConfig.host();
+        if(graphiteConfigHost.startsWith(PREFIX)) {
+            final String environmentVariableName = graphiteConfigHost.substring(
+                    PREFIX.length(), graphiteConfigHost.length() - SUFFIX.length());
+            final Map<String, String> environmentVariables = factory.getEnvironmentVariables();
+            return environmentVariables.get(environmentVariableName);
+        }
+        return graphiteConfigHost;
     }
 
     MetricObserver rateTransform(GraphiteConfig graphiteConfig, MetricObserver observer) {
@@ -153,6 +170,10 @@ public class MetricPublishing {
 
         MetricPoller createMonitorRegistryMetricPoller() {
             return new MonitorRegistryMetricPoller();
+        }
+
+        Map<String,String> getEnvironmentVariables() {
+            return System.getenv();
         }
     }
 }
