@@ -6,7 +6,7 @@
             <pattern>%d{HH:mm:ss.SSS} %level [%thread] %X{requestid} %logger{10} %msg%n</pattern>
         </encoder>
     </appender>
-    <root level="WARN">
+    <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>

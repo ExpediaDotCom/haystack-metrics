@@ -1,5 +1,7 @@
 # Release Notes
 
+## 0.8.0 / 2018-03-01 Log an informational message when starting metric publishing
+
 ## 0.7.0 / 2018-02-02 Perform environment variable substitution on GraphiteConfig.host()
 Log4j2 parsing of YAML files does not perform environment variable substitution, so Haystack's use of the
 [haystack-log4j-metrics-appender](https://github.com/ExpediaDotCom/haystack-log4j-metrics-appender) package wasn't

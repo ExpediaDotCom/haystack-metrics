@@ -26,6 +26,8 @@ import com.netflix.servo.publish.PollRunnable;
 import com.netflix.servo.publish.PollScheduler;
 import com.netflix.servo.publish.graphite.GraphiteMetricObserver;
 import com.netflix.servo.util.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -46,17 +48,19 @@ public class MetricPublishing {
     static final String ASYNC_METRIC_OBSERVER_NAME = "haystack";
     static final int POLL_INTERVAL_SECONDS_TO_EXPIRE_TIME_MULTIPLIER = 2000;
     static final String HOST_NAME_UNKNOWN_HOST_EXCEPTION = "HostName-UnknownHostException";
+    static final String GRAPHITE_OBSERVER_DEBUG_MSG = "Creating GraphiteObserver with hostAndPort [%s] sendasrate [%b]";
     private static final String PREFIX = "${";
     private static final String SUFFIX = "}";
 
     private final Factory factory;
+    private final Logger logger;
     private final PollScheduler pollScheduler = PollScheduler.getInstance();
 
     /**
      * Creates a new instance of MetricPublishing; intended to be used by non-unit-test code.
      */
     public MetricPublishing() {
-        this(new Factory());
+        this(new Factory(), LoggerFactory.getLogger(MetricPublishing.class));
     }
 
     /**
@@ -65,8 +69,9 @@ public class MetricPublishing {
      *
      * @param factory The factory to use.
      */
-    MetricPublishing(Factory factory) {
+    MetricPublishing(Factory factory, Logger logger) {
         this.factory = factory;
+        this.logger = logger;
     }
 
     /**
@@ -102,9 +107,13 @@ public class MetricPublishing {
     MetricObserver createGraphiteObserver(GraphiteConfig graphiteConfig) {
         final String host = getHost(graphiteConfig);
         final String hostAndPort = host + ":" + graphiteConfig.port();
-        final MetricObserver graphiteMetricObserver = factory.createGraphiteMetricObserver(ASYNC_METRIC_OBSERVER_NAME, hostAndPort);
+        final MetricObserver graphiteMetricObserver = factory.createGraphiteMetricObserver(
+                ASYNC_METRIC_OBSERVER_NAME, hostAndPort);
         final MetricObserver async = async(graphiteConfig, graphiteMetricObserver);
-        return graphiteConfig.sendasrate() ? rateTransform(graphiteConfig, async) : async;
+        final boolean sendasrate = graphiteConfig.sendasrate();
+        final MetricObserver metricObserver = sendasrate ? rateTransform(graphiteConfig, async) : async;
+        logger.info(String.format(GRAPHITE_OBSERVER_DEBUG_MSG, hostAndPort, sendasrate));
+        return metricObserver;
     }
 
     @VisibleForTesting
