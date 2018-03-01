@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.slf4j.Logger;
 
 import java.net.UnknownHostException;
 import java.util.Collections;
@@ -42,6 +43,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import static com.expedia.www.haystack.metrics.MetricPublishing.ASYNC_METRIC_OBSERVER_NAME;
+import static com.expedia.www.haystack.metrics.MetricPublishing.GRAPHITE_OBSERVER_DEBUG_MSG;
 import static com.expedia.www.haystack.metrics.MetricPublishing.HOST_NAME_UNKNOWN_HOST_EXCEPTION;
 import static com.expedia.www.haystack.metrics.MetricPublishing.POLL_INTERVAL_SECONDS_TO_EXPIRE_TIME_MULTIPLIER;
 import static java.util.Collections.singletonMap;
@@ -96,6 +98,9 @@ public class MetricPublishingTest {
     @Mock
     private MetricPoller mockMetricPoller;
 
+    @Mock
+    private Logger mockLogger;
+
     // Objects under test
     private MetricPublishing metricPublishing;
     private Factory factory;
@@ -103,7 +108,7 @@ public class MetricPublishingTest {
     @Before
     public void setUp() {
         when(mockFactory.getEnvironmentVariables()).thenReturn(ENVIRONMENT_VARIABLES);
-        metricPublishing = new MetricPublishing(mockFactory);
+        metricPublishing = new MetricPublishing(mockFactory, mockLogger);
         factory = new Factory();
     }
 
@@ -113,7 +118,7 @@ public class MetricPublishingTest {
             PollScheduler.getInstance().stop();
         }
         verifyNoMoreInteractions(mockFactory, mockMetricObserver, mockGraphiteConfig, mockAsyncMetricObserver,
-                mockCounterToRateMetricTransform, mockGraphiteMetricObserver, mockTask, mockMetricPoller);
+                mockCounterToRateMetricTransform, mockGraphiteMetricObserver, mockTask, mockMetricPoller, mockLogger);
     }
 
     @Test
@@ -127,7 +132,6 @@ public class MetricPublishingTest {
 
         // Would mock PollScheduler, but it's final; instead, sleep to give mockTask.run() time to be called
         Thread.sleep(1000);
-        verify(mockGraphiteConfig).sendasrate();
         verifiesForStart(observers);
         metricPublishing.stop();
     }
@@ -153,6 +157,8 @@ public class MetricPublishingTest {
     }
 
     private void verifiesForStart(List<MetricObserver> observers) {
+        verify(mockGraphiteConfig).sendasrate();
+        verify(mockLogger).info(String.format(GRAPHITE_OBSERVER_DEBUG_MSG, HOST_AND_PORT, true));
         verifiesForAsync(3, mockGraphiteMetricObserver);
         verify(mockFactory).createCounterToRateMetricTransform(mockAsyncMetricObserver, POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
         verifiesForCreateGraphiteObserver(3);
@@ -169,6 +175,7 @@ public class MetricPublishingTest {
         assertSame(mockAsyncMetricObserver, metricObserver);
 
         verify(mockGraphiteConfig).sendasrate();
+        verify(mockLogger).info(String.format(GRAPHITE_OBSERVER_DEBUG_MSG, HOST_AND_PORT, false));
         verifiesForAsync(1, mockGraphiteMetricObserver);
         verifiesForCreateGraphiteObserver(1);
     }
