@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.9.0 / 2018-03-05 Count the number of times that MetricPublishing.start() was called
+This is needed so that MetricPublishing.stop() will not actually stop the polling thread until the last call to 
+MetricPublishing.start(); Log4j2 behavior at start-up necessitated this change.
+
 ## 0.8.0 / 2018-03-01 Log an informational message when starting metric publishing
 
 ## 0.7.0 / 2018-02-02 Perform environment variable substitution on GraphiteConfig.host()
