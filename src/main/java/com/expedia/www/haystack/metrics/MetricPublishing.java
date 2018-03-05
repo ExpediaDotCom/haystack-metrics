@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -55,6 +56,7 @@ public class MetricPublishing {
     private final Factory factory;
     private final Logger logger;
     private final PollScheduler pollScheduler = PollScheduler.getInstance();
+    private final AtomicInteger pollSchedulerStartCount = new AtomicInteger(0);
 
     /**
      * Creates a new instance of MetricPublishing; intended to be used by non-unit-test code.
@@ -83,6 +85,7 @@ public class MetricPublishing {
      */
     public void start(GraphiteConfig graphiteConfig) {
         synchronized (pollScheduler) {
+            pollSchedulerStartCount.addAndGet(1);
             if(!pollScheduler.isStarted()) {
                 pollScheduler.start();
                 final MetricPoller monitorRegistryMetricPoller = factory.createMonitorRegistryMetricPoller();
@@ -97,8 +100,15 @@ public class MetricPublishing {
      * Stops the polling that publishes metrics; for maximum safety, call this method before calling System.exit().
      */
     public void stop() {
+        // Log4j2 start-up calls start() twice for a particular appender, and therefore calls stop() twice, but (as it
+        // turns out) calls start() twice before the first call to stop()! As a result we have to count the number of
+        // times that start() was called and not actually stop until the last call. The <code><= 0</code> check in this
+        // method allows the unit test to execute the <code>catch(IllegalStateException e)</code> by calling stop()
+        // before ever calling start().
         try {
-            pollScheduler.stop();
+            if(pollSchedulerStartCount.decrementAndGet() <= 0) {
+                pollScheduler.stop();
+            }
         } catch(IllegalStateException e) {
             // The poller wasn't started; just ignore this error
         }

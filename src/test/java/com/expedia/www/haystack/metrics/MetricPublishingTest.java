@@ -133,7 +133,9 @@ public class MetricPublishingTest {
         // Would mock PollScheduler, but it's final; instead, sleep to give mockTask.run() time to be called
         Thread.sleep(1000);
         verifiesForStart(observers);
-        metricPublishing.stop();
+        for(int i = 0 ; i < NUMBER_OF_ITERATIONS_IN_TESTS ; i++) {
+            metricPublishing.stop();
+        }
     }
 
     @Test(expected = OutOfMemoryError.class)
