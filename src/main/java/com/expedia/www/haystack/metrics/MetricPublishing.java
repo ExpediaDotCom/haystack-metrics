@@ -50,13 +50,14 @@ public class MetricPublishing {
     static final int POLL_INTERVAL_SECONDS_TO_EXPIRE_TIME_MULTIPLIER = 2000;
     static final String HOST_NAME_UNKNOWN_HOST_EXCEPTION = "HostName-UnknownHostException";
     static final String GRAPHITE_OBSERVER_DEBUG_MSG = "Creating GraphiteObserver with hostAndPort [%s] sendasrate [%b]";
+
+    private static final AtomicInteger POLL_SCHEDULER_START_COUNT = new AtomicInteger(0);
+    private static final PollScheduler POLL_SCHEDULER = PollScheduler.getInstance();
     private static final String PREFIX = "${";
     private static final String SUFFIX = "}";
 
     private final Factory factory;
     private final Logger logger;
-    private final PollScheduler pollScheduler = PollScheduler.getInstance();
-    private final AtomicInteger pollSchedulerStartCount = new AtomicInteger(0);
 
     /**
      * Creates a new instance of MetricPublishing; intended to be used by non-unit-test code.
@@ -84,14 +85,14 @@ public class MetricPublishing {
      * @param graphiteConfig Tells the library how to talk to Graphite
      */
     public void start(GraphiteConfig graphiteConfig) {
-        synchronized (pollScheduler) {
-            pollSchedulerStartCount.addAndGet(1);
-            if(!pollScheduler.isStarted()) {
-                pollScheduler.start();
+        synchronized (POLL_SCHEDULER) {
+            POLL_SCHEDULER_START_COUNT.addAndGet(1);
+            if(!POLL_SCHEDULER.isStarted()) {
+                POLL_SCHEDULER.start();
                 final MetricPoller monitorRegistryMetricPoller = factory.createMonitorRegistryMetricPoller();
                 final List<MetricObserver> observers = Collections.singletonList(createGraphiteObserver(graphiteConfig));
                 final PollRunnable task = factory.createTask(monitorRegistryMetricPoller, observers);
-                pollScheduler.addPoller(task, graphiteConfig.pollintervalseconds(), SECONDS);
+                POLL_SCHEDULER.addPoller(task, graphiteConfig.pollintervalseconds(), SECONDS);
             }
         }
     }
@@ -106,8 +107,8 @@ public class MetricPublishing {
         // method allows the unit test to execute the <code>catch(IllegalStateException e)</code> by calling stop()
         // before ever calling start().
         try {
-            if(pollSchedulerStartCount.decrementAndGet() <= 0) {
-                pollScheduler.stop();
+            if(POLL_SCHEDULER_START_COUNT.decrementAndGet() <= 0) {
+                POLL_SCHEDULER.stop();
             }
         } catch(IllegalStateException e) {
             // The poller wasn't started; just ignore this error

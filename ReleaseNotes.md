@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.10.0 / 2018-03-06 Make poll scheduler and poll scheduler count variables static
+The poll scheduler variable is a singleton, vended by Servo, so that cached copy in MetricPublishing should be a static,
+as should the variable that counts how many times MetricPublishing.start() was called.
+
 ## 0.9.0 / 2018-03-05 Count the number of times that MetricPublishing.start() was called
 This is needed so that MetricPublishing.stop() will not actually stop the polling thread until the last call to 
 MetricPublishing.start(); Log4j2 behavior at start-up necessitated this change.
