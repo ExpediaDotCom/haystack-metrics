@@ -20,9 +20,13 @@ import com.netflix.servo.DefaultMonitorRegistry;
 import com.netflix.servo.MonitorRegistry;
 import com.netflix.servo.monitor.BasicCounter;
 import com.netflix.servo.monitor.BasicTimer;
+import com.netflix.servo.monitor.BucketConfig;
+import com.netflix.servo.monitor.BucketTimer;
 import com.netflix.servo.monitor.Counter;
 import com.netflix.servo.monitor.MonitorConfig;
+import com.netflix.servo.monitor.StatsTimer;
 import com.netflix.servo.monitor.Timer;
+import com.netflix.servo.stats.StatsConfig;
 import com.netflix.servo.tag.BasicTagList;
 import com.netflix.servo.tag.SmallTagMap;
 import com.netflix.servo.tag.TagList;
@@ -82,7 +86,7 @@ public class MetricObjects {
      * by the second call.
      *
      * @param subsystem   the subsystem, typically something like "pipes" or "trends".
-     * @param application the application in the subsystem
+     * @param application the application in the subsystem.
      * @param klass       the metric class, frequently (but not necessarily) the class containing the Counter.
      * @param counterName the name of the Counter, usually the name of the variable holding the Counter instance;
      *                    using upper case for counterName is recommended.
@@ -103,7 +107,7 @@ public class MetricObjects {
      * call.
      *
      * @param subsystem   the subsystem, typically something like "pipes" or "trends".
-     * @param application the application in the subsystem
+     * @param application the application in the subsystem.
      * @param klass       the metric class, frequently (but not necessarily) the class containing the Counter.
      * @param counterName the name of the Counter, usually the name of the variable holding the Counter instance;
      *                    using upper case for counterName is recommended.
@@ -124,13 +128,12 @@ public class MetricObjects {
      * call.
      *
      * @param metricGroup             the metric group, typically "errors" (the first use case for which this API was
-     *                                written)
+     *                                written).
      * @param subsystem               the subsystem, typically something like "pipes" or "trends".
-     * @param fullyQualifiedClassName the fully (package) qualified class name, with '.' replaced by '-'
+     * @param fullyQualifiedClassName the fully (package) qualified class name, with '.' replaced by '-'.
      * @param lineNumber              the line number of the source code at which the error occurred or was logged
      * @param counterName             the name of the Counter, usually the name of the variable holding the Counter
-     *                                instance;
-     *                                using upper case for counterName is recommended.
+     *                                instance; using upper case for counterName is recommended.
      * @return a new Counter that this method registers in the DefaultMonitorRegistry before returning it.
      */
     public Counter createAndRegisterResettingCounter(String metricGroup,
@@ -158,27 +161,83 @@ public class MetricObjects {
      * Creates a new BasicTimer; you should only call this method once for each BasicTimer in your code.
      * This method is thread-safe; see the comments in {@link #createAndRegisterCounter}.
      * If you call the method twice with the same arguments, the Timer created during the first call will be returned
-     * by the second call.
+     * by the second call. Note that the Timer configuration specified by the first four arguments to this method must
+     * be unique across all Timers (BasicTimer, BucketTimer, and StatsTimer).
      *
      * @param subsystem   the subsystem, typically something like "pipes" or "trends".
-     * @param application the application in the subsystem
+     * @param application the application in the subsystem.
      * @param klass       the metric class, frequently (but not necessarily) the class containing the Timer.
      * @param timerName   the name of the Timer, usually the name of the variable holding the Timer instance
      *                    using upper case for timerName is recommended.
-     * @param timeUnit    desired precision, typically TimeUnit.MILLISECONDS; use TimeUnit.NANOSECONDS (rare) or
+     * @param timeUnit    desired precision, typically TimeUnit.MILLISECONDS.
      * @return a new BasicTimer that this method registers in the DefaultMonitorRegistry before returning it.
      */
     public Timer createAndRegisterBasicTimer(
             String subsystem, String application, String klass, String timerName, TimeUnit timeUnit) {
         final MonitorConfig monitorConfig = buildMonitorConfig(subsystem, application, klass, timerName);
-        final Timer basicTimer = new BasicTimer(monitorConfig, timeUnit);
-        final Timer existingTimer = TIMERS.putIfAbsent(monitorConfig, basicTimer);
+        return checkForExistingTimer(monitorConfig, new BasicTimer(monitorConfig, timeUnit));
+    }
+
+    /**
+     * Creates a new StatsTimer; you should only call this method once for each StatsTimer in your code.
+     * This method is thread-safe; see the comments in {@link #createAndRegisterCounter}.
+     * If you call the method twice with the same arguments, the Timer created during the first call will be returned
+     * by the second call. Note that the Timer configuration specified by the first four arguments to this method must
+     * be unique across all Timers (BasicTimer, BucketTimer, and StatsTimer).
+     *
+     *
+     * @param subsystem   the subsystem, typically something like "pipes" or "trends".
+     * @param application the application in the subsystem.
+     * @param klass       the metric class, frequently (but not necessarily) the class containing the Timer.
+     * @param timerName   the name of the Timer, usually the name of the variable holding the Timer instance
+     *                    using upper case for timerName is recommended.
+     * @param timeUnit    desired precision, typically TimeUnit.MILLISECONDS.
+     * @param sampleSize  sample size, recommended as the approximate number of events timed during the polling
+     *                    interval. This value controls the size of the array that stores timing information for
+     *                    statistical analysis.
+     * @return a new StatsTimer that this method registers in the DefaultMonitorRegistry before returning it.
+     */
+    public Timer createAndRegisterStatsTimer(
+            String subsystem, String application, String klass, String timerName, TimeUnit timeUnit, int sampleSize,
+            long frequencyMillis, double...percentiles) {
+        final MonitorConfig monitorConfig = buildMonitorConfig(subsystem, application, klass, timerName);
+        final StatsConfig statsConfig = new StatsConfig.Builder().withSampleSize(sampleSize).withPublishCount(true)
+                .withPublishTotal(true).withPublishMin(true).withPublishMax(true).withPublishMean(true)
+                .withPublishVariance(true).withPublishStdDev(true).withComputeFrequencyMillis(frequencyMillis)
+                .withPercentiles(percentiles).build();
+        return checkForExistingTimer(monitorConfig, new StatsTimer(monitorConfig, statsConfig, timeUnit));
+    }
+
+    /**
+     * Creates a new BucketTimer; you should only call this method once for each BucketTimer in your code.
+     * This method is thread-safe; see the comments in {@link #createAndRegisterCounter}.
+     * If you call the method twice with the same arguments, the Timer created during the first call will be returned
+     * by the second call. Note that the Timer configuration specified by the first four arguments to this method must
+     * be unique across all Timers (BasicTimer, BucketTimer, and StatsTimer).
+     *
+     * @param subsystem   the subsystem, typically something like "pipes" or "trends".
+     * @param application the application in the subsystem.
+     * @param klass       the metric class, frequently (but not necessarily) the class containing the Timer.
+     * @param timerName   the name of the Timer, usually the name of the variable holding the Timer instance
+     *                    using upper case for timerName is recommended.
+     * @param timeUnit    desired precision, typically TimeUnit.MILLISECONDS.
+     * @return a new BucketTimer that this method registers in the DefaultMonitorRegistry before returning it.
+     */
+    public Timer createAndRegisterBucketTimer(
+            String subsystem, String application, String klass, String timerName, TimeUnit timeUnit, long...buckets) {
+        final MonitorConfig monitorConfig = buildMonitorConfig(subsystem, application, klass, timerName);
+        final BucketConfig bucketConfig = new BucketConfig.Builder().withBuckets(buckets).build();
+        return checkForExistingTimer(monitorConfig, new BucketTimer(monitorConfig, bucketConfig, timeUnit));
+    }
+
+    private Timer checkForExistingTimer(MonitorConfig monitorConfig, Timer timer) {
+        final Timer existingTimer = TIMERS.putIfAbsent(monitorConfig, timer);
         if (existingTimer != null) {
             logger.warn(String.format(TIMER_ALREADY_REGISTERED, existingTimer.toString()));
             return existingTimer;
         }
-        factory.getMonitorRegistry().register(basicTimer);
-        return basicTimer;
+        factory.getMonitorRegistry().register(timer);
+        return timer;
     }
 
     private MonitorConfig buildMonitorConfig(String metricGroup,
