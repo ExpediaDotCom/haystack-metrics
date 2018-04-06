@@ -1,5 +1,12 @@
 # Release Notes
 
+## 1.0.0 / 2018-03-16 Add support for BucketTimer and StatsTimer
+Servo's
+[BucketTimer](https://netflix.github.io/servo/current/servo-core/docs/javadoc/com/netflix/servo/monitor/BucketTimer.html)
+and 
+[StatsTimer](https://github.com/Netflix/servo/blob/master/servo-core/src/main/java/com/netflix/servo/monitor/StatsTimer.java)
+provide different statistical possibilities than the BasicTimer already available from haystack-metrics.
+
 ## 0.10.0 / 2018-03-06 Make poll scheduler and poll scheduler count variables static
 The poll scheduler variable is a singleton, vended by Servo, so that cached copy in MetricPublishing should be a static,
 as should the variable that counts how many times MetricPublishing.start() was called.

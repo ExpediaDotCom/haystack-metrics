@@ -121,6 +121,12 @@ You can also do your own timing without using a Stopwatch:
 JSON_SERIALIZATION.record(timeItTookInMs, TimeUnit.MILLISECONDS);
 ```
 Again, the Timer will be reset when its values are reported to InfluxDb.
+#### BucketTimer and StatsTimer
+Servo provides counters more complicated than BasicTimer:
+* [BucketTimer](https://netflix.github.io/servo/current/servo-core/docs/javadoc/com/netflix/servo/monitor/BucketTimer.html)
+and 
+* [StatsTimer](https://github.com/Netflix/servo/blob/master/servo-core/src/main/java/com/netflix/servo/monitor/StatsTimer.java)
+They can be created with code very similar to what was given in the BucketTimer section above.
 #### The Main Method
 To initialize the metrics system, the first line of your main() method should be something like:
 ```

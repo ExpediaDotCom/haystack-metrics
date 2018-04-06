@@ -57,6 +57,10 @@ public class MetricObjectsTest {
     private final static String CLASS = RANDOM.nextLong() + "CLASS";
     private final static String LINE_NUMBER = Integer.toString(RANDOM.nextInt(Integer.MAX_VALUE));
     private final static String METRIC_NAME = RANDOM.nextLong() + "METRIC_NAME";
+    private static final long [] BUCKETS = { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 };
+    private static final int SAMPLE_SIZE = RANDOM.nextInt(Byte.MAX_VALUE);
+    private static final long FREQUENCY_MILLIS = RANDOM.nextInt(Integer.MAX_VALUE);
+    private static final double [] PERCENTILES = { 50.0, 90.0, 99.0, 99.9 };
 
     @Mock
     private MetricObjects.Factory mockFactory;
@@ -194,6 +198,54 @@ public class MetricObjectsTest {
                 SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME, MILLISECONDS);
         final Timer existingTimer = metricObjects.createAndRegisterBasicTimer(
                 SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME, MILLISECONDS);
+
+        assertSame(timer, existingTimer);
+        verify(mockLogger).warn(String.format(MetricObjects.TIMER_ALREADY_REGISTERED, existingTimer));
+        assertsAndVerifiesForCreateAndRegister(timer, 3);
+    }
+
+    @Test
+    public void testCreateAndRegisterBucketTimer() {
+        when(mockFactory.getMonitorRegistry()).thenReturn(mockMonitorRegistry);
+
+        final Timer timer = metricObjects.createAndRegisterBucketTimer(
+                SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME, MILLISECONDS, BUCKETS);
+
+        assertsAndVerifiesForCreateAndRegister(timer, 3);
+    }
+
+    @Test
+    public void testCreateAndRegisterExistingBucketTimer() {
+        when(mockFactory.getMonitorRegistry()).thenReturn(mockMonitorRegistry);
+
+        final Timer timer = metricObjects.createAndRegisterBucketTimer(
+                SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME, MILLISECONDS, BUCKETS);
+        final Timer existingTimer = metricObjects.createAndRegisterBucketTimer(
+                SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME, MILLISECONDS, BUCKETS);
+
+        assertSame(timer, existingTimer);
+        verify(mockLogger).warn(String.format(MetricObjects.TIMER_ALREADY_REGISTERED, existingTimer));
+        assertsAndVerifiesForCreateAndRegister(timer, 3);
+    }
+
+    @Test
+    public void testCreateAndRegisterStatsTimer() {
+        when(mockFactory.getMonitorRegistry()).thenReturn(mockMonitorRegistry);
+
+        final Timer timer = metricObjects.createAndRegisterStatsTimer(
+                SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME, MILLISECONDS, SAMPLE_SIZE, FREQUENCY_MILLIS, PERCENTILES);
+
+        assertsAndVerifiesForCreateAndRegister(timer, 3);
+    }
+
+    @Test
+    public void testCreateAndRegisterExistingStatsTimer() {
+        when(mockFactory.getMonitorRegistry()).thenReturn(mockMonitorRegistry);
+
+        final Timer timer = metricObjects.createAndRegisterStatsTimer(
+                SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME, MILLISECONDS, SAMPLE_SIZE, FREQUENCY_MILLIS, PERCENTILES);
+        final Timer existingTimer = metricObjects.createAndRegisterStatsTimer(
+                SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME, MILLISECONDS, SAMPLE_SIZE, FREQUENCY_MILLIS, PERCENTILES);
 
         assertSame(timer, existingTimer);
         verify(mockLogger).warn(String.format(MetricObjects.TIMER_ALREADY_REGISTERED, existingTimer));
