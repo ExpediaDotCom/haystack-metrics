@@ -1,6 +1,9 @@
 # Release Notes
 
-## 1.0.0 / 2018-03-16 Add support for BucketTimer and StatsTimer
+## 1.0.1 / 2018-04-09 No changes
+Unable to upload 1.0.0 to Nexus, bumping the version and tagging before push in another upload attempt.
+
+## 1.0.0 / 2018-04-06 Add support for BucketTimer and StatsTimer
 Servo's
 [BucketTimer](https://netflix.github.io/servo/current/servo-core/docs/javadoc/com/netflix/servo/monitor/BucketTimer.html)
 and 
