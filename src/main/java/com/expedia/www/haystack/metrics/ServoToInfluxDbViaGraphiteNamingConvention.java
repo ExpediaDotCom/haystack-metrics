@@ -23,6 +23,7 @@ import com.netflix.servo.publish.graphite.GraphiteNamingConvention;
 import com.netflix.servo.tag.Tag;
 import com.netflix.servo.tag.TagList;
 
+import static com.expedia.www.haystack.metrics.MetricObjects.METRIC_GROUP_BUCKETS;
 import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_APPLICATION;
 import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_CLASS;
 import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_FULLY_QUALIFIED_CLASS_NAME;
@@ -39,7 +40,8 @@ public class ServoToInfluxDbViaGraphiteNamingConvention implements GraphiteNamin
     static final String MISSING_TAG = "MISSING_TAG_%s";
     static final String METRIC_FORMAT_6_ARGS = "%s.%s.%s.%s.%s_%s";
     static final String METRIC_FORMAT_7_ARGS = "%s.%s.%s.%s.%s.%s_%s";
-    static final String STATISTIC_TAG_NAME = "statistic";
+    static final String TAG_KEY_STATISTIC = "statistic";
+    static final String TAG_KEY_SERVO_BUCKET = "servo.bucket";
 
     private final String hostName;
 
@@ -73,7 +75,7 @@ public class ServoToInfluxDbViaGraphiteNamingConvention implements GraphiteNamin
         final TagList tags = config.getTags();
 
         // Timer comes with a statistic tag; Counter does not
-        final Tag statisticTag = tags.getTag(STATISTIC_TAG_NAME);
+        final Tag statisticTag = tags.getTag(TAG_KEY_STATISTIC);
         final String statisticName = statisticTag == null ? null : statisticTag.getValue();
 
         final String metricGroup = tags.getValue(TAG_KEY_METRIC_GROUP);
@@ -82,14 +84,15 @@ public class ServoToInfluxDbViaGraphiteNamingConvention implements GraphiteNamin
         final String type = cleanup(tags, DataSourceType.KEY);
         final String metricName = statisticName == null ? type : type + '_' + statisticName;
         if(metricGroup == null) {
-            final String application = cleanup(tags, TAG_KEY_APPLICATION);
-            final String klass = cleanup(tags, TAG_KEY_CLASS);
-            return String.format(METRIC_FORMAT_6_ARGS, subsystem, application, hostName, klass, configName, metricName);
+            return String.format(METRIC_FORMAT_6_ARGS, subsystem, cleanup(tags, TAG_KEY_APPLICATION), hostName,
+                    cleanup(tags, TAG_KEY_CLASS), configName, metricName);
+        } else if(metricGroup.equals(METRIC_GROUP_BUCKETS)) {
+            return String.format(METRIC_FORMAT_7_ARGS, metricGroup, subsystem, cleanup(tags, TAG_KEY_APPLICATION),
+                    hostName, cleanup(tags, TAG_KEY_SERVO_BUCKET), configName, metricName);
         }
-        final String fullyQualifiedClassName = cleanup(tags, TAG_KEY_FULLY_QUALIFIED_CLASS_NAME);
-        final String lineNumber = cleanup(tags, TAG_KEY_LINE_NUMBER);
-        return String.format(METRIC_FORMAT_7_ARGS, metricGroup, subsystem, fullyQualifiedClassName, hostName,
-                lineNumber, configName, metricName);
+        return String.format(METRIC_FORMAT_7_ARGS, metricGroup, subsystem,
+                cleanup(tags, TAG_KEY_FULLY_QUALIFIED_CLASS_NAME), hostName, cleanup(tags, TAG_KEY_LINE_NUMBER),
+                configName, metricName);
     }
 
     private static String cleanup(TagList tags, String name) {

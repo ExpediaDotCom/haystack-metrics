@@ -34,6 +34,8 @@ import org.slf4j.Logger;
 
 import java.util.Random;
 
+import static com.expedia.www.haystack.metrics.MetricObjects.METRIC_GROUP_BUCKETS;
+import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_APPLICATION;
 import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_CLASS;
 import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_FULLY_QUALIFIED_CLASS_NAME;
 import static com.expedia.www.haystack.metrics.MetricObjects.TAG_KEY_LINE_NUMBER;
@@ -49,18 +51,15 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MetricObjectsTest {
-    private final static Random RANDOM = new Random();
-    private final static String METRIC_GROUP = RANDOM.nextLong() + "METRIC_GROUP";
-    private final static String SUBSYSTEM = RANDOM.nextLong() + "SUBSYSTEM";
-    private final static String APPLICATION = RANDOM.nextLong() + "APPLICATION";
-    private final static String FULLY_QUALIFIED_CLASS_NAME = RANDOM.nextLong() + "FULLY_QUALIFIED_CLASS_NAME";
-    private final static String CLASS = RANDOM.nextLong() + "CLASS";
-    private final static String LINE_NUMBER = Integer.toString(RANDOM.nextInt(Integer.MAX_VALUE));
-    private final static String METRIC_NAME = RANDOM.nextLong() + "METRIC_NAME";
+    private static final Random RANDOM = new Random();
+    private static final String METRIC_GROUP = RANDOM.nextLong() + "METRIC_GROUP";
+    private static final String SUBSYSTEM = RANDOM.nextLong() + "SUBSYSTEM";
+    private static final String APPLICATION = RANDOM.nextLong() + "APPLICATION";
+    private static final String FULLY_QUALIFIED_CLASS_NAME = RANDOM.nextLong() + "FULLY_QUALIFIED_CLASS_NAME";
+    private static final String CLASS = RANDOM.nextLong() + "CLASS";
+    private static final String LINE_NUMBER = Integer.toString(RANDOM.nextInt(Integer.MAX_VALUE));
+    private static final String METRIC_NAME = RANDOM.nextLong() + "METRIC_NAME";
     private static final long [] BUCKETS = { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 };
-    private static final int SAMPLE_SIZE = RANDOM.nextInt(Byte.MAX_VALUE);
-    private static final long FREQUENCY_MILLIS = RANDOM.nextInt(Integer.MAX_VALUE);
-    private static final double [] PERCENTILES = { 50.0, 90.0, 99.0, 99.9 };
 
     @Mock
     private MetricObjects.Factory mockFactory;
@@ -209,9 +208,9 @@ public class MetricObjectsTest {
         when(mockFactory.getMonitorRegistry()).thenReturn(mockMonitorRegistry);
 
         final Timer timer = metricObjects.createAndRegisterBucketTimer(
-                SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME, MILLISECONDS, BUCKETS);
+                SUBSYSTEM, APPLICATION, METRIC_NAME, MILLISECONDS, BUCKETS);
 
-        assertsAndVerifiesForCreateAndRegister(timer, 3);
+        assertsAndVerifiesForCreateAndRegisterBucketType(timer);
     }
 
     @Test
@@ -219,37 +218,13 @@ public class MetricObjectsTest {
         when(mockFactory.getMonitorRegistry()).thenReturn(mockMonitorRegistry);
 
         final Timer timer = metricObjects.createAndRegisterBucketTimer(
-                SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME, MILLISECONDS, BUCKETS);
+                SUBSYSTEM, APPLICATION, METRIC_NAME, MILLISECONDS, BUCKETS);
         final Timer existingTimer = metricObjects.createAndRegisterBucketTimer(
-                SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME, MILLISECONDS, BUCKETS);
+                SUBSYSTEM, APPLICATION, METRIC_NAME, MILLISECONDS, BUCKETS);
 
         assertSame(timer, existingTimer);
         verify(mockLogger).warn(String.format(MetricObjects.TIMER_ALREADY_REGISTERED, existingTimer));
-        assertsAndVerifiesForCreateAndRegister(timer, 3);
-    }
-
-    @Test
-    public void testCreateAndRegisterStatsTimer() {
-        when(mockFactory.getMonitorRegistry()).thenReturn(mockMonitorRegistry);
-
-        final Timer timer = metricObjects.createAndRegisterStatsTimer(
-                SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME, MILLISECONDS, SAMPLE_SIZE, FREQUENCY_MILLIS, PERCENTILES);
-
-        assertsAndVerifiesForCreateAndRegister(timer, 3);
-    }
-
-    @Test
-    public void testCreateAndRegisterExistingStatsTimer() {
-        when(mockFactory.getMonitorRegistry()).thenReturn(mockMonitorRegistry);
-
-        final Timer timer = metricObjects.createAndRegisterStatsTimer(
-                SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME, MILLISECONDS, SAMPLE_SIZE, FREQUENCY_MILLIS, PERCENTILES);
-        final Timer existingTimer = metricObjects.createAndRegisterStatsTimer(
-                SUBSYSTEM, APPLICATION, CLASS, METRIC_NAME, MILLISECONDS, SAMPLE_SIZE, FREQUENCY_MILLIS, PERCENTILES);
-
-        assertSame(timer, existingTimer);
-        verify(mockLogger).warn(String.format(MetricObjects.TIMER_ALREADY_REGISTERED, existingTimer));
-        assertsAndVerifiesForCreateAndRegister(timer, 3);
+        assertsAndVerifiesForCreateAndRegisterBucketType(timer);
     }
 
     private void assertsAndVerifiesForCreateAndRegister(Monitor<?> monitor, int expectedTagListSize) {
@@ -269,6 +244,17 @@ public class MetricObjectsTest {
         assertEquals(SUBSYSTEM, tagList.getValue(TAG_KEY_SUBSYSTEM));
         assertEquals(FULLY_QUALIFIED_CLASS_NAME, tagList.getValue(TAG_KEY_FULLY_QUALIFIED_CLASS_NAME));
         assertEquals(LINE_NUMBER, tagList.getValue(TAG_KEY_LINE_NUMBER));
+        assertEquals(METRIC_NAME, monitor.getConfig().getName());
+        verify(mockMonitorRegistry).register(monitor);
+        verify(mockFactory).getMonitorRegistry();
+    }
+
+    private void assertsAndVerifiesForCreateAndRegisterBucketType(Monitor<?> monitor) {
+        final TagList tagList = monitor.getConfig().getTags();
+        assertEquals(3, tagList.size());
+        assertEquals(METRIC_GROUP_BUCKETS, tagList.getValue(TAG_KEY_METRIC_GROUP));
+        assertEquals(SUBSYSTEM, tagList.getValue(TAG_KEY_SUBSYSTEM));
+        assertEquals(APPLICATION, tagList.getValue(TAG_KEY_APPLICATION));
         assertEquals(METRIC_NAME, monitor.getConfig().getName());
         verify(mockMonitorRegistry).register(monitor);
         verify(mockFactory).getMonitorRegistry();

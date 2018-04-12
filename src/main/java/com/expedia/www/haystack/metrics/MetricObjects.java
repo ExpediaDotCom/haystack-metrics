@@ -24,9 +24,7 @@ import com.netflix.servo.monitor.BucketConfig;
 import com.netflix.servo.monitor.BucketTimer;
 import com.netflix.servo.monitor.Counter;
 import com.netflix.servo.monitor.MonitorConfig;
-import com.netflix.servo.monitor.StatsTimer;
 import com.netflix.servo.monitor.Timer;
-import com.netflix.servo.stats.StatsConfig;
 import com.netflix.servo.tag.BasicTagList;
 import com.netflix.servo.tag.SmallTagMap;
 import com.netflix.servo.tag.TagList;
@@ -35,6 +33,7 @@ import com.netflix.servo.tag.Tags;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +51,7 @@ public class MetricObjects {
     static final String TAG_KEY_LINE_NUMBER = "lineNumber";
     static final String COUNTER_ALREADY_REGISTERED = "The Counter %s has already been registered";
     static final String TIMER_ALREADY_REGISTERED = "The Timer %s has already been registered";
+    static final String METRIC_GROUP_BUCKETS = "buckets";
     static final ConcurrentMap<MonitorConfig, Counter> BASIC_COUNTERS = new ConcurrentHashMap<>();
     static final ConcurrentMap<MonitorConfig, Counter> RESETTING_NON_RATE_COUNTERS = new ConcurrentHashMap<>();
     static final ConcurrentMap<MonitorConfig, Timer> TIMERS = new ConcurrentHashMap<>();
@@ -141,13 +141,15 @@ public class MetricObjects {
                                                      String fullyQualifiedClassName,
                                                      String lineNumber,
                                                      String counterName) {
-        final MonitorConfig monitorConfig = buildMonitorConfig(
+        final MonitorConfig monitorConfig = buildMonitorConfigForErrors(
                 metricGroup, subsystem, fullyQualifiedClassName, lineNumber, counterName);
         return checkForExistingCounter(
                 monitorConfig, new ResettingCounter(monitorConfig), RESETTING_NON_RATE_COUNTERS);
     }
 
-    private Counter checkForExistingCounter(MonitorConfig monitorConfig, Counter counter, ConcurrentMap<MonitorConfig, Counter> counters) {
+    private Counter checkForExistingCounter(MonitorConfig monitorConfig,
+                                            Counter counter,
+                                            Map<MonitorConfig, Counter> counters) {
         final Counter existingCounter = counters.putIfAbsent(monitorConfig, counter);
         if (existingCounter != null) {
             logger.warn(String.format(COUNTER_ALREADY_REGISTERED, existingCounter.toString()));
@@ -167,7 +169,7 @@ public class MetricObjects {
      * @param subsystem   the subsystem, typically something like "pipes" or "trends".
      * @param application the application in the subsystem.
      * @param klass       the metric class, frequently (but not necessarily) the class containing the Timer.
-     * @param timerName   the name of the Timer, usually the name of the variable holding the Timer instance
+     * @param timerName   the name of the Timer, usually the name of the variable holding the Timer instance;
      *                    using upper case for timerName is recommended.
      * @param timeUnit    desired precision, typically TimeUnit.MILLISECONDS.
      * @return a new BasicTimer that this method registers in the DefaultMonitorRegistry before returning it.
@@ -179,53 +181,27 @@ public class MetricObjects {
     }
 
     /**
-     * Creates a new StatsTimer; you should only call this method once for each StatsTimer in your code.
-     * This method is thread-safe; see the comments in {@link #createAndRegisterCounter}.
-     * If you call the method twice with the same arguments, the Timer created during the first call will be returned
-     * by the second call. Note that the Timer configuration specified by the first four arguments to this method must
-     * be unique across all Timers (BasicTimer, BucketTimer, and StatsTimer).
-     *
-     *
-     * @param subsystem   the subsystem, typically something like "pipes" or "trends".
-     * @param application the application in the subsystem.
-     * @param klass       the metric class, frequently (but not necessarily) the class containing the Timer.
-     * @param timerName   the name of the Timer, usually the name of the variable holding the Timer instance
-     *                    using upper case for timerName is recommended.
-     * @param timeUnit    desired precision, typically TimeUnit.MILLISECONDS.
-     * @param sampleSize  sample size, recommended as the approximate number of events timed during the polling
-     *                    interval. This value controls the size of the array that stores timing information for
-     *                    statistical analysis.
-     * @return a new StatsTimer that this method registers in the DefaultMonitorRegistry before returning it.
-     */
-    public Timer createAndRegisterStatsTimer(
-            String subsystem, String application, String klass, String timerName, TimeUnit timeUnit, int sampleSize,
-            long frequencyMillis, double...percentiles) {
-        final MonitorConfig monitorConfig = buildMonitorConfig(subsystem, application, klass, timerName);
-        final StatsConfig statsConfig = new StatsConfig.Builder().withSampleSize(sampleSize).withPublishCount(true)
-                .withPublishTotal(true).withPublishMin(true).withPublishMax(true).withPublishMean(true)
-                .withPublishVariance(true).withPublishStdDev(true).withComputeFrequencyMillis(frequencyMillis)
-                .withPercentiles(percentiles).build();
-        return checkForExistingTimer(monitorConfig, new StatsTimer(monitorConfig, statsConfig, timeUnit));
-    }
-
-    /**
      * Creates a new BucketTimer; you should only call this method once for each BucketTimer in your code.
      * This method is thread-safe; see the comments in {@link #createAndRegisterCounter}.
      * If you call the method twice with the same arguments, the Timer created during the first call will be returned
-     * by the second call. Note that the Timer configuration specified by the first four arguments to this method must
-     * be unique across all Timers (BasicTimer, BucketTimer, and StatsTimer).
+     * by the second call. Note that the Timer configuration specified by the second through fifth arguments to this
+     * method must be unique across all Timers (BasicTimer, BucketTimer, and StatsTimer).
      *
      * @param subsystem   the subsystem, typically something like "pipes" or "trends".
      * @param application the application in the subsystem.
-     * @param klass       the metric class, frequently (but not necessarily) the class containing the Timer.
-     * @param timerName   the name of the Timer, usually the name of the variable holding the Timer instance
+     * @param timerName   the name of the Timer, usually the name of the variable holding the Timer instance;
      *                    using upper case for timerName is recommended.
      * @param timeUnit    desired precision, typically TimeUnit.MILLISECONDS.
+     * @param buckets     the buckets to be used; @see BucketConfig#withBuckets
      * @return a new BucketTimer that this method registers in the DefaultMonitorRegistry before returning it.
      */
-    public Timer createAndRegisterBucketTimer(
-            String subsystem, String application, String klass, String timerName, TimeUnit timeUnit, long...buckets) {
-        final MonitorConfig monitorConfig = buildMonitorConfig(subsystem, application, klass, timerName);
+    public Timer createAndRegisterBucketTimer(String subsystem,
+                                              String application,
+                                              String timerName,
+                                              TimeUnit timeUnit,
+                                              long... buckets) {
+        final MonitorConfig monitorConfig = buildMonitorConfigForBuckets(
+                subsystem, application, timerName);
         final BucketConfig bucketConfig = new BucketConfig.Builder().withBuckets(buckets).build();
         return checkForExistingTimer(monitorConfig, new BucketTimer(monitorConfig, bucketConfig, timeUnit));
     }
@@ -240,12 +216,18 @@ public class MetricObjects {
         return timer;
     }
 
-    private MonitorConfig buildMonitorConfig(String metricGroup,
-                                             String subsystem,
-                                             String fullyQualifiedClassName,
-                                             String lineNumber,
-                                             String monitorName) {
-        final TaggingContext taggingContext = () -> getTags(metricGroup, subsystem, fullyQualifiedClassName, lineNumber);
+    private MonitorConfig buildMonitorConfigForErrors(String metricGroup,
+                                                      String subsystem,
+                                                      String fullyQualifiedClassName,
+                                                      String lineNumber,
+                                                      String monitorName) {
+        final TaggingContext taggingContext = () -> getTagsForErrors(
+                metricGroup, subsystem, fullyQualifiedClassName, lineNumber);
+        return MonitorConfig.builder(monitorName).withTags(taggingContext.getTags()).build();
+    }
+
+    private MonitorConfig buildMonitorConfigForBuckets(String subsystem, String application, String monitorName) {
+        final TaggingContext taggingContext = () -> getTagsForBuckets(subsystem, application);
         return MonitorConfig.builder(monitorName).withTags(taggingContext.getTags()).build();
     }
 
@@ -254,16 +236,26 @@ public class MetricObjects {
         return MonitorConfig.builder(monitorName).withTags(taggingContext.getTags()).build();
     }
 
-    private static TagList getTags(
+    private static TagList getTagsForErrors(
             String metricGroup, String subsystem, String fullyQualifiedClassName, String lineNumber) {
         final SmallTagMap.Builder builder = new SmallTagMap.Builder(4);
         builder.add(Tags.newTag(TAG_KEY_METRIC_GROUP, metricGroup));
+        builder.add(Tags.newTag(TAG_KEY_LINE_NUMBER, lineNumber));
         builder.add(Tags.newTag(TAG_KEY_SUBSYSTEM, subsystem));
         builder.add(Tags.newTag(TAG_KEY_FULLY_QUALIFIED_CLASS_NAME, fullyQualifiedClassName));
-        builder.add(Tags.newTag(TAG_KEY_LINE_NUMBER, lineNumber));
         return new BasicTagList(builder.result());
     }
 
+    @SuppressWarnings("Duplicates")
+    private static TagList getTagsForBuckets(String subsystem, String application) {
+        final SmallTagMap.Builder builder = new SmallTagMap.Builder(3);
+        builder.add(Tags.newTag(TAG_KEY_METRIC_GROUP, METRIC_GROUP_BUCKETS));
+        builder.add(Tags.newTag(TAG_KEY_SUBSYSTEM, subsystem));
+        builder.add(Tags.newTag(TAG_KEY_APPLICATION, application));
+        return new BasicTagList(builder.result());
+    }
+
+    @SuppressWarnings("Duplicates")
     private static TagList getTags(String subsystem, String application, String klass) {
         final SmallTagMap.Builder builder = new SmallTagMap.Builder(3);
         builder.add(Tags.newTag(TAG_KEY_SUBSYSTEM, subsystem));

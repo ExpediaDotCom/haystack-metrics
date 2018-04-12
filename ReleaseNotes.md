@@ -1,5 +1,10 @@
 # Release Notes
 
+## 2.0.0 / 2018-04-12 No changes
+Remove support for StatsTimer, as it's not currently being used and has no InfluxDb template to create it from the
+Graphite metric produced. Support BucketTimer better, with a hard coded "buckets" in the Graphite metric name, and more
+readable code in the ServoToInfluxDbViaGraphiteNamingConvention class that builds that metric name.
+
 ## 1.0.1 / 2018-04-09 No changes
 Unable to upload 1.0.0 to Nexus, bumping the version and tagging before push in another upload attempt.
 
