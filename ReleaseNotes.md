@@ -1,5 +1,8 @@
 # Release Notes
 
+## 2.0.1 / 2018-06-22 Delete logback.xml from src/resources
+The presence of this file on the classpath was causing problems for clients who wanted to provide their own logback.xml.
+
 ## 2.0.0 / 2018-04-12 No changes
 Remove support for StatsTimer, as it's not currently being used and has no InfluxDb template to create it from the
 Graphite metric produced. Support BucketTimer better, with a hard coded "buckets" in the Graphite metric name, and more
